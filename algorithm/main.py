@@ -2,18 +2,12 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.classes import Graph
 
+def get_op_potential_new_node(w: tuple[int, int], operations, nodes):
+    for edge, op_info in operations.items():
+        if w in edge and (edge[0] not in nodes or edge[1] not in nodes):
+            return {'operation': f'{op_info[0]}', 'parallel_edges': op_info[1]}
 
-def get_operation_between(u: tuple[int, int], v: tuple[int, int], operations):
-    try:
-        if u[0] == v[0]:
-            return operations[(v, u)] if u[1] < v[1] else operations[(u, v)]
-
-        elif u[1] == v[1]:
-            return operations[(u, v)] if u[0] < v[0] else operations[(v, u)]
-
-        return None
-    except KeyError:
-        return None
+    return None
 
 def get_edge(u: tuple[int, int], v: tuple[int, int]):
     if u[0] == v[0]:
@@ -46,14 +40,22 @@ def traverse_from_node(graph: Graph, v: tuple[int, int], operations, vector_tree
                 continue
 
             # process here
-            print("==========")
-            print(path)
+            # print("==========")
+            # print(path)
             prev = path[len(path) - 2]
-            operation = get_operation_between(w,prev, operations)
             edge = get_edge(w, prev)
-            print(edge)
-            print(operation)
-            print("==========")
+            operation = graph.get_edge_data(w,prev)
+
+            if not operation:
+                operation = get_op_potential_new_node(w, operations, graph.nodes)
+
+            if operation is None:
+                # no operation process
+                print("No operation on edge " + str(edge))
+            else:
+                # handle parallel ops or just handle operation
+                print(operation)
+            #print("==========")
 
 
 
@@ -106,7 +108,11 @@ operations = {
 for edge in edges:
     start = edge[0]
     end = edge[1]
-    G.add_edge(start, end)
+
+    if (start, end) in operations:
+        G.add_edge(start, end, operation=operations[(start,end)][0], parallel_edges=operations[(start,end)][1])
+    else:
+        G.add_edge(start, end)
 
 
 # Draw the graph
