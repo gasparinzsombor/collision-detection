@@ -1,63 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from networkx.classes import Graph
-
-def get_op_potential_new_node(w: tuple[int, int], operations, nodes):
-    for edge, op_info in operations.items():
-        if w in edge and (edge[0] not in nodes or edge[1] not in nodes):
-            return {'operation': f'{op_info[0]}', 'parallel_edges': op_info[1]}
-
-    return None
-
-def get_edge(u: tuple[int, int], v: tuple[int, int]):
-    if u[0] == v[0]:
-        return (v, u) if u[1] < v[1] else (u, v)
-
-    elif u[1] == v[1]:
-        return (u, v) if u[0] < v[0] else (v, u)
-
-
-
-"""
-    Returns relative position of w to v in direction vector
-"""
-# def get_relative_position(v: tuple[int, int], w: tuple[int, int]):
-#     if v[0] > w[0]:
-#         return Vector()
-
-def traverse_from_node(graph: Graph, v: tuple[int, int], operations, vector_trees):
-    visited = set()
-    stack: list[tuple[tuple[int, int], list[tuple[int, int]]]] = [(v, [v])]
-    while stack:
-        (w, path) = stack.pop()
-        if w not in visited:
-            visited.add(w)
-            for w0 in graph.neighbors(w):
-                if w0 not in visited:
-                    stack.append((w0, path + [w0]))
-
-            if w is v:
-                continue
-
-            # process here
-            # print("==========")
-            # print(path)
-            prev = path[len(path) - 2]
-            edge = get_edge(w, prev)
-            operation = graph.get_edge_data(w,prev)
-
-            if not operation:
-                operation = get_op_potential_new_node(w, operations, graph.nodes)
-
-            if operation is None:
-                # no operation process
-                print("No operation on edge " + str(edge))
-            else:
-                # handle parallel ops or just handle operation
-                print(operation)
-            #print("==========")
-
-
+import algorithms as a
 
 # Create a new graph
 G = nx.Graph()
@@ -125,7 +68,7 @@ plt.show()
 
 start = (4,7)
 
-traverse_from_node(G, start, operations, list())
+a.traverse_from_node(G, start, operations, list())
 
 
 #
