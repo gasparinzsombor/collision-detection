@@ -68,7 +68,7 @@ plt.show()
 
 start = (4,7)
 
-a.traverse_from_node(G, start, operations, list())
+a.traverse_from_node(G, start, operations)
 
 
 #
