@@ -1,0 +1,151 @@
+/* Main container to ensure uniform width and centered content */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Arial', sans-serif;
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+/* Header styling */
+.header {
+    text-align: center;
+    padding: 20px;
+    background-color: #003366;
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    margin-bottom: 10px;
+    font-size: 32px;
+}
+
+.header p {
+    font-size: 18px;
+}
+
+/* Layout for content row */
+.content-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    width: 100%;
+}
+
+/* Visualization Area */
+.visualization-area {
+    width: 60%;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Vector display */
+.vector-display {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Control Panel */
+.control-panel {
+    width: 25%; /* Adjusted for more space */
+    padding: 20px;
+    background-color: #e3e4e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column; /* Stack all elements vertically */
+}
+
+/* Header inside control panel */
+.control-panel h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #003366;
+}
+
+/* Input, dropdown, buttons and sliders to fit within control panel */
+.input-field, .dropdown, .action-button, .slider {
+    margin-bottom: 15px;
+    width: 100%;
+    max-width: 100%; /* Prevent sliders and inputs from exceeding width */
+    box-sizing: border-box; /* Ensure padding doesn't overflow */
+}
+
+/* Fix the input field (number input) */
+.input-field {
+    padding: 12px;  /* Add padding for better alignment */
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 100%; /* Ensure the input takes full width */
+    box-sizing: border-box;
+}
+
+/* Ensure dropdown is larger and consistent */
+.dropdown {
+    padding: 12px; /* Increased padding for larger feel */
+    font-size: 16px;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Ensure slider takes full width and doesn't overflow */
+.slider {
+    padding: 8px 0;
+    width: 100%; /* Ensure full width */
+    max-width: 100%; /* No overflow */
+    box-sizing: border-box;
+}
+
+.slider-container {
+    width: 100%;  /* Additional container for sliders */
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+/* Action buttons consistency */
+.action-button {
+    background-color: #003366;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+}
+
+.action-button:hover {
+    background-color: #0055a5;
+}
+
+/* Information Panel */
+.information-panel {
+    width: 25%; /* Adjusted for more space */
+    padding: 20px;
+    background-color: #e3e4e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.information-panel h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #003366;
+}
+
+.status-output, .performance-metrics, .detailed-log {
+    background-color: white;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
