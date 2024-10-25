@@ -86,8 +86,3 @@ You can modify the node layout, edges, and appearance by editing the `app.py` fi
 - [Dash](https://dash.plotly.com/) - Web application framework for Python.
 - [Plotly](https://plotly.com/python/) - Used for creating visualizations.
 - [NetworkX](https://networkx.org/) - Library for creating and analyzing graphs.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
