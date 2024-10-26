@@ -27,7 +27,13 @@ def get_unit_vector(from_: tuple[int, int], to_: tuple[int, int]):
 def traverse_from_node(
         graph: Graph,
         v: tuple[int, int],
-        operations: dict[tuple[tuple[int, int], tuple[int, int]], tuple[str, list[tuple[tuple[int, int], tuple[int, int]]]] | tuple[str, list]]
+        operations: dict[
+            tuple[tuple[int, int], tuple[int, int]],
+            tuple[str, list[tuple[tuple[int, int], tuple[int, int]]]] | tuple[str, list]
+        ]
+        # key is the two coord of an edge
+        # value is a tuple of type of operation (expansion / contraction) and a list of coupled operations
+        # the coupled operations are also part of the operations dict
     ):
 
     visited = set()
@@ -42,10 +48,7 @@ def traverse_from_node(
         (w, path, vec) = stack.pop()
         if w not in visited:
             visited.add(w)
-            # process here
 
-            # print("==========")
-            # print(path)
             prev = path[len(path) - 2]
             edge = get_edge(w, prev)
             operation = operations.get(edge)
@@ -57,9 +60,12 @@ def traverse_from_node(
             #else:
                 #print(f"node: {w} no operation on edge {edge}")
 
-            print(f"node: {w}, edge: {edge}, vec: {vec.multiset}")
+            #print(f"node: {w}, edge: {edge}, vec: {vec.multiset}")
 
-            check_interception(vec.get_vectors(), len(graph.nodes))
+            if check_interception(vec.get_vectors(), len(graph.nodes), v):
+                print(f"Collision detected between {v} and {w}")
+            else:
+                print(f"No collision between {v} and {w}")
 
             # add all neighbours to the stack
             if w in graph.nodes:
@@ -69,6 +75,8 @@ def traverse_from_node(
                         new_vec.multiset = vec.multiset.copy()
                         stack.append((w0, path + [w0], new_vec))
 
+            # there is a possibility of creating a new node with expansion, in this case we have to add that node
+            # to the stack and traverse that coordinate as well
             maybe_new_node = get_op_potential_new_node(w, operations, graph.nodes)
             if maybe_new_node is not None:
                 if graph.nodes.__contains__(maybe_new_node.get("edge")[0]):
@@ -82,15 +90,35 @@ def traverse_from_node(
 
 
 
-def check_interception(unit_vectors: list[tuple[int, int]], n: int) -> bool:
-    dp = np.zeros((n+1, n+1, n+1), dtype=bool)
-    dp[0][0][0] = True
-
+def check_interception(unit_vectors: list[tuple[int, int]], n: int, target_v: tuple[int, int]) -> bool:
     m = len(unit_vectors)
+    max_value = n
 
     for j in range(m):
-        for i in range(0, j):
-            pass
+        remaining_vectors = unit_vectors[:j] + unit_vectors[j+1:]
+        dp = [[[False for _ in range(max_value + 1)] for _ in range(max_value + 1)] for _ in range(m)]
+        dp[0][0][0] = True
 
-        for i in range(j+1, m):
-            pass
+        for i in range(len(remaining_vectors)):
+            v_x, v_y = remaining_vectors[i]
+
+            for x in range(max_value + 1):
+                for y in range(max_value + 1):
+                    if dp[i][x][y]:
+                        dp[i+1][x][y] = True
+
+                        if x + v_x <= max_value and y + v_y <= max_value:
+                            dp[i+1][x + v_x][y + v_y] = True
+
+        vx_j, vy_j = unit_vectors[j]
+        for x in range(max_value + 1):
+            for y in range(max_value + 1):
+                if dp[len(remaining_vectors) - 1][x][y]:
+                    # Check if moving over vector τ_j causes a collision with v
+                    final_x = x + vx_j
+                    final_y = y + vy_j
+                    if (final_x, final_y) == target_v:
+                        return True  # Collision detected
+
+    # No collision between w and v
+    return False
