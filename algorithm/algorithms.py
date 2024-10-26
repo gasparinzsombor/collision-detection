@@ -17,12 +17,57 @@ def get_edge(u: tuple[int, int], v: tuple[int, int]):
         return (u, v) if u[0] < v[0] else (v, u)
 
 
+def determine_edge_orientation(edge):
+    """
+    Determine if the given edge is horizontal or vertical.
 
-"""
-    Returns relative position of w to v in direction vector
-"""
-def get_unit_vector(from_: tuple[int, int], to_: tuple[int, int]):
-    return to_[0] - from_[0], to_[1] - from_[1]
+    :param edge: A tuple representing an edge ((x1, y1), (x2, y2)).
+    :return: A string "horizontal" if the edge is horizontal, "vertical" if the edge is vertical.
+    """
+    (x1, y1), (x2, y2) = edge
+
+    if y1 == y2:
+        return "horizontal"  # The edge is horizontal if the y-coordinates are the same
+    elif x1 == x2:
+        return "vertical"  # The edge is vertical if the x-coordinates are the same
+    else:
+        raise ValueError("Invalid edge: The edge must be either horizontal or vertical.")
+
+
+def unit_vector_for_movement(w, v, operation, edge):
+    """
+    Decide the unit vector for the movement of node `w` relative to node `v` based on the edge orientation.
+
+    The edge orientation is determined automatically from the edge's coordinates.
+
+    :param w: A tuple representing the position of node `w` (x_w, y_w).
+    :param v: A tuple representing the position of node `v` (x_v, y_v).
+    :param operation: A string indicating the operation on the edge ("contraction" or "expansion").
+    :param edge: A tuple representing an edge ((x1, y1), (x2, y2)).
+    :return: A tuple representing the unit vector of movement (<1, 0>, <0, 1>, <-1, 0>, <0, -1>).
+    """
+    # Determine if the edge is horizontal or vertical
+    edge_orientation = determine_edge_orientation(edge)
+
+    if edge_orientation == "horizontal":
+        # Focus on the x-axis: movement left or right
+        dx = w[0] - v[0]
+        unit_x = dx // abs(dx) if dx != 0 else 0
+        unit_y = 0  # No movement in the y-axis for a horizontal edge
+
+    elif edge_orientation == "vertical":
+        # Focus on the y-axis: movement up or down
+        dy = w[1] - v[1]
+        unit_x = 0  # No movement in the x-axis for a vertical edge
+        unit_y = dy // abs(dy) if dy != 0 else 0
+
+    # For contraction, we reverse the direction (move towards `v`)
+    if operation == "contraction":
+        return (-unit_x, -unit_y)
+
+    # For expansion, use the unit vector as is (move away from `v`)
+    elif operation == "expansion":
+        return (unit_x, unit_y)
 
 def traverse_from_node(
         graph: Graph,
@@ -54,15 +99,15 @@ def traverse_from_node(
             operation = operations.get(edge)
 
             if operation is not None:
-                unit_vector = get_unit_vector(prev, w)
+                unit_vector = unit_vector_for_movement(w, v, operation[0], edge)
                 vec.insert_vector(unit_vector)
                 #print(f"node: {w} operation: {operation} on edge {edge}")
             #else:
                 #print(f"node: {w} no operation on edge {edge}")
 
-            #print(f"node: {w}, edge: {edge}, vec: {vec.multiset}")
+            print(f"node: {w}, edge: {edge}, vec: {vec.multiset}")
 
-            if check_interception(vec.get_vectors(), len(graph.nodes), v):
+            if check_interception(vec.get_vectors(), len(graph.nodes), v, w):
                 print(f"Collision detected between {v} and {w}")
             else:
                 print(f"No collision between {v} and {w}")
@@ -90,14 +135,16 @@ def traverse_from_node(
 
 
 
-def check_interception(unit_vectors: list[tuple[int, int]], n: int, target_v: tuple[int, int]) -> bool:
+def check_interception(unit_vectors: list[tuple[int, int]], n: int, target_v: tuple[int, int], start_w: tuple[int, int]) -> bool:
     m = len(unit_vectors)
     max_value = n
+
+    w_start_x, w_start_y = start_w
 
     for j in range(m):
         remaining_vectors = unit_vectors[:j] + unit_vectors[j+1:]
         dp = [[[False for _ in range(max_value + 1)] for _ in range(max_value + 1)] for _ in range(m)]
-        dp[0][0][0] = True
+        dp[0][w_start_x][w_start_y] = True
 
         for i in range(len(remaining_vectors)):
             v_x, v_y = remaining_vectors[i]
