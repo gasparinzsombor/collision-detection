@@ -34,3 +34,25 @@ class Node:
             possible_locations = possible_locations + result
             
         return list(set(possible_locations))
+    
+    def moved_by(self, vector: Vector):
+        return Node(self.x + vector.x, self.y + vector.y)
+    
+    def as_tuple(self) -> tuple[int, int]:
+        return (self.x, self.y)
+    
+    @staticmethod
+    def from_tuple(tuple: tuple[int, int]):
+        return Node(tuple[0], tuple[1])
+    
+    def __eq__(self, value) -> bool:
+        return self.x == value.x and self.y == value.y
+    
+    def __lt__(self, other):
+         return (self.x, self.y) < (other.x, other.y)
+    
+    def __hash__(self) -> int:
+        return hash((self.x, self.y))
+    
+    def __repr__(self) -> str:
+        return f"N({self.x},{self.y})"

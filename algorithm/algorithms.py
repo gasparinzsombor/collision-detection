@@ -1,74 +1,29 @@
+from webbrowser import Opera
 from networkx.classes import Graph
 from utilities.utilities import Vec
+from Node import Node
+from Vector import Vector
 
-def get_op_potential_new_node(w: tuple[int, int], operations, nodes) -> dict[str, str | list[tuple[tuple[int, int], tuple[int, int]]] | tuple[tuple[int, int], tuple[int, int]]] | None:
-    for edge, op_info in operations.items():
-        if w in edge and (edge[0] not in nodes or edge[1] not in nodes):
-            return {'operation': f'{op_info[0]}', 'parallel_edges': op_info[1], 'edge': edge}
-
-    return None
-
-def determine_edge_orientation(edge):
-    (x1, y1), (x2, y2) = edge
-
-    if y1 == y2:
-        return "horizontal"  # The edge is horizontal if the y-coordinates are the same
-    else:
-        return "vertical"  # The edge is vertical if the x-coordinates are the same
-
-
-def unit_vector_for_movement(operation: str, parallel_edges: list, edge: tuple[tuple[int,int], tuple[int, int]]):
-    # Determine if the edge is horizontal or vertical
-    edge_orientation = determine_edge_orientation(edge)
-
-    if edge_orientation == "horizontal":
-        # if we step from right to left:
-        # edge = (prev, w)
-        if edge[0][0] > edge[1][0]:
-            if operation == "contraction":
-                return 1, 0
-            else:
-                return -1, 0
-
-        # we step from left to right:
-        else:
-            if operation == "contraction":
-                return -1, 0
-            else:
-                return 1, 0
-    else: # vertical edge
-        # if we step from down to up
-        # edge = (prev, w)
-        if edge[0][1] < edge[1][1]:
-            if operation == "contraction":
-                return 0, -1
-            else:
-                return 0, 1
-
-        # we step from up to down
-        else:
-            if operation == "contraction":
-                return 0, 1
-            else:
-                return 0, -1
+Edge = tuple[Node, Node]
+Operations = dict[
+            Edge,
+            tuple[str, list[Edge]]
+        ]
 
 def traverse_from_node(
         graph: Graph,
-        v: tuple[int, int],
-        operations: dict[
-            tuple[tuple[int, int], tuple[int, int]],
-            tuple[str, list[tuple[tuple[int, int], tuple[int, int]]]] | tuple[str, list]
-        ]
+        v: Node,
+        operations: Operations
         # key is the two coord of an edge
         # value is a tuple of type of operation (expansion / contraction) and a list of coupled operations
         # the coupled operations are also part of the operations dict
     ):
 
-    visited = set()
+    visited: set[Node] = set()
     stack: list[
         tuple[
-            tuple[int, int], # coord of the actual node
-            list[tuple[int, int]], # path from v starting point to actual node
+            Node, # w: coord of the actual node
+            list[Node], # path from v starting point to actual node
             Vec # multiset of vectors on the path from v to actual node
         ]
     ] = [(v, [v], Vec(v,v))]
@@ -109,49 +64,227 @@ def traverse_from_node(
             maybe_new_node = get_op_potential_new_node(w, operations, graph.nodes)
             if maybe_new_node is not None:
                 if maybe_new_node.get("edge")[0] in graph.nodes:
-                    new_node: tuple[int, int] = maybe_new_node.get("edge")[1]
+                    new_node: Node = maybe_new_node.get("edge")[1]
                 else:
-                    new_node: tuple[int, int] = maybe_new_node.get("edge")[0]
+                    new_node: Node = maybe_new_node.get("edge")[0]
                 new_vec = Vec(v, new_node)
                 new_vec.multiset = vec.multiset.copy()
                 stack.append((new_node, path + [new_node], new_vec))
 
 
 
+def get_op_potential_new_node(w: Node, operations: Operations, nodes) -> dict[str, str | list[Edge] | Edge] | None:
+    for edge, op_info in operations.items():
+        if w in edge and (edge[0] not in nodes or edge[1] not in nodes):
+            return {'operation': f'{op_info[0]}', 'parallel_edges': op_info[1], 'edge': edge}
 
-def check_interception(unit_vectors: list[tuple[int, int]], n: int, target_v: tuple[int, int], start_w: tuple[int, int]) -> bool:
-    m = len(unit_vectors)
-    max_value = n
+    return None
 
-    w_start_x, w_start_y = start_w
+def determine_edge_orientation(edge: Edge):
+    node1, node2 = edge
 
-    for j in unit_vectors:
-        remaining_vectors = unit_vectors.copy()
-        remaining_vectors.remove(j)
-        dp = [[[False for _ in range(max_value + 1)] for _ in range(max_value + 1)] for _ in range(m)]
-        dp[0][w_start_x][w_start_y] = True
+    if node1.y == node2.y:
+        return "horizontal"  # The edge is horizontal if the y-coordinates are the same
+    else:
+        return "vertical"  # The edge is vertical if the x-coordinates are the same
 
-        for i in range(len(remaining_vectors)):
-            v_x, v_y = remaining_vectors[i]
 
-            for x in range(max_value + 1):
-                for y in range(max_value + 1):
-                    if dp[i][x][y]:
-                        dp[i+1][x][y] = True
+def unit_vector_for_movement(operation: str, parallel_edges: list[Edge], edge: Edge):
+    # Determine if the edge is horizontal or vertical
+    edge_orientation = determine_edge_orientation(edge)
 
-                        if x + v_x <= max_value and y + v_y <= max_value:
-                            dp[i+1][x + v_x][y + v_y] = True
+    if edge_orientation == "horizontal":
+        # if we step from right to left:
+        # edge = (prev, w)
+        if edge[0].x > edge[1].x:
+            if operation == "contraction":
+                return Vector(1, 0)
+            else:
+                return Vector(-1, 0)
 
-        vx_j, vy_j = j
-        #print(dp)
-        for x in range(max_value + 1):
-            for y in range(max_value + 1):
-                if dp[len(remaining_vectors) - 1][x][y]:
-                    # Check if moving over vector j causes a collision with v
-                    final_x = x + vx_j
-                    final_y = y + vy_j
-                    if (final_x, final_y) == target_v:
-                        return True  # Collision detected
+        # we step from left to right:
+        else:
+            if operation == "contraction":
+                return Vector(-1, 0)
+            else:
+                return Vector(1, 0)
+    else: # vertical edge
+        # if we step from down to up
+        # edge = (prev, w)
+        if edge[0].y < edge[1].y:
+            if operation == "contraction":
+                return Vector(0, -1)
+            else:
+                return Vector(0, 1)
 
-    # No collision between w and v
-    return False
+        # we step from up to down
+        else:
+            if operation == "contraction":
+                return Vector(0, 1)
+            else:
+                return Vector(0, -1)
+
+
+def check_interception(unit_vectors: list[Vector], n: int, target_v: Node, start_w: Node) -> bool:
+    possible_locations = start_w.possible_locations(unit_vectors, n)
+    print(f"possible movements for {start_w}: {possible_locations}")
+
+    return any(start_w.moved_by(loc) == target_v for loc in possible_locations)
+
+# from networkx.classes import Graph
+# from utilities.utilities import Vec
+
+# def get_op_potential_new_node(w: tuple[int, int], operations, nodes) -> dict[str, str | list[tuple[tuple[int, int], tuple[int, int]]] | tuple[tuple[int, int], tuple[int, int]]] | None:
+#     for edge, op_info in operations.items():
+#         if w in edge and (edge[0] not in nodes or edge[1] not in nodes):
+#             return {'operation': f'{op_info[0]}', 'parallel_edges': op_info[1], 'edge': edge}
+
+#     return None
+
+# def determine_edge_orientation(edge):
+#     (x1, y1), (x2, y2) = edge
+
+#     if y1 == y2:
+#         return "horizontal"  # The edge is horizontal if the y-coordinates are the same
+#     else:
+#         return "vertical"  # The edge is vertical if the x-coordinates are the same
+
+
+# def unit_vector_for_movement(operation: str, parallel_edges: list, edge: tuple[tuple[int,int], tuple[int, int]]):
+#     # Determine if the edge is horizontal or vertical
+#     edge_orientation = determine_edge_orientation(edge)
+
+#     if edge_orientation == "horizontal":
+#         # if we step from right to left:
+#         # edge = (prev, w)
+#         if edge[0][0] > edge[1][0]:
+#             if operation == "contraction":
+#                 return 1, 0
+#             else:
+#                 return -1, 0
+
+#         # we step from left to right:
+#         else:
+#             if operation == "contraction":
+#                 return -1, 0
+#             else:
+#                 return 1, 0
+#     else: # vertical edge
+#         # if we step from down to up
+#         # edge = (prev, w)
+#         if edge[0][1] < edge[1][1]:
+#             if operation == "contraction":
+#                 return 0, -1
+#             else:
+#                 return 0, 1
+
+#         # we step from up to down
+#         else:
+#             if operation == "contraction":
+#                 return 0, 1
+#             else:
+#                 return 0, -1
+
+# def traverse_from_node(
+#         graph: Graph,
+#         v: tuple[int, int],
+#         operations: dict[
+#             tuple[tuple[int, int], tuple[int, int]],
+#             tuple[str, list[tuple[tuple[int, int], tuple[int, int]]]] | tuple[str, list]
+#         ]
+#         # key is the two coord of an edge
+#         # value is a tuple of type of operation (expansion / contraction) and a list of coupled operations
+#         # the coupled operations are also part of the operations dict
+#     ):
+
+#     visited = set()
+#     stack: list[
+#         tuple[
+#             tuple[int, int], # coord of the actual node
+#             list[tuple[int, int]], # path from v starting point to actual node
+#             Vec # multiset of vectors on the path from v to actual node
+#         ]
+#     ] = [(v, [v], Vec(v,v))]
+#     while stack:
+#         (w, path, vec) = stack.pop()
+#         if w not in visited:
+#             visited.add(w)
+
+#             prev = path[len(path) - 2]
+#             edge = (prev, w)
+#             operation = graph.get_edge_data(prev,w)
+#             if operation is not None and len(operation) != 0:
+#                 op: str = operation['operation']
+#                 parallel_edges: list = operation['parallel_edges']
+#                 unit_vector = unit_vector_for_movement(op, parallel_edges, edge)
+#                 vec.insert_vector(unit_vector, parallel_edges, edge)
+#                 #print(f"node: {w} operation: {operation} on edge {edge}")
+#             #else:
+#                 #print(f"node: {w} no operation on edge {edge}")
+
+#             print(f"node: {w}, edge: {edge}, vec: {vec.get_vectors()}")
+
+#             if check_interception(vec.get_vectors(), len(graph.nodes), v, w):
+#                 print(f"Collision detected between {v} and {w}")
+#             else:
+#                 print(f"No collision between {v} and {w}")
+
+#             # add all neighbours to the stack
+#             if w in graph.nodes:
+#                 for w0 in graph.neighbors(w):
+#                     if w0 not in visited:
+#                         new_vec = Vec(v, w0)
+#                         new_vec.multiset = vec.multiset.copy()
+#                         stack.append((w0, path + [w0], new_vec))
+
+#             # there is a possibility of creating a new node with expansion, in this case we have to add that node
+#             # to the stack and traverse that coordinate as well
+#             maybe_new_node = get_op_potential_new_node(w, operations, graph.nodes)
+#             if maybe_new_node is not None:
+#                 if maybe_new_node.get("edge")[0] in graph.nodes:
+#                     new_node: tuple[int, int] = maybe_new_node.get("edge")[1]
+#                 else:
+#                     new_node: tuple[int, int] = maybe_new_node.get("edge")[0]
+#                 new_vec = Vec(v, new_node)
+#                 new_vec.multiset = vec.multiset.copy()
+#                 stack.append((new_node, path + [new_node], new_vec))
+
+
+
+
+# def check_interception(unit_vectors: list[tuple[int, int]], n: int, target_v: tuple[int, int], start_w: tuple[int, int]) -> bool:
+#     m = len(unit_vectors)
+#     max_value = n
+
+#     w_start_x, w_start_y = start_w
+
+#     for j in unit_vectors:
+#         remaining_vectors = unit_vectors.copy()
+#         remaining_vectors.remove(j)
+#         dp = [[[False for _ in range(max_value + 1)] for _ in range(max_value + 1)] for _ in range(m)]
+#         dp[0][w_start_x][w_start_y] = True
+
+#         for i in range(len(remaining_vectors)):
+#             v_x, v_y = remaining_vectors[i]
+
+#             for x in range(max_value + 1):
+#                 for y in range(max_value + 1):
+#                     if dp[i][x][y]:
+#                         dp[i+1][x][y] = True
+
+#                         if x + v_x <= max_value and y + v_y <= max_value:
+#                             dp[i+1][x + v_x][y + v_y] = True
+
+#         vx_j, vy_j = j
+#         #print(dp)
+#         for x in range(max_value + 1):
+#             for y in range(max_value + 1):
+#                 if dp[len(remaining_vectors) - 1][x][y]:
+#                     # Check if moving over vector j causes a collision with v
+#                     final_x = x + vx_j
+#                     final_y = y + vy_j
+#                     if (final_x, final_y) == target_v:
+#                         return True  # Collision detected
+
+#     # No collision between w and v
+#     return False

@@ -3,6 +3,11 @@ m = |operations and coupling|
 Result = boolean[m][n][n]
 
 forall v in S:
+    w
+    ops = ...
+
+
+forall v in S:
 	forall w in S:
 		T = t1, ..., tm = all operations and coupling between v and w
         for j in 1..m:
