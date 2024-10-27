@@ -1,6 +1,5 @@
 from networkx.classes import Graph
 from utilities.utilities import Vec
-import numpy as np
 
 def get_op_potential_new_node(w: tuple[int, int], operations, nodes) -> dict[str, str | list[tuple[tuple[int, int], tuple[int, int]]] | tuple[tuple[int, int], tuple[int, int]]] | None:
     for edge, op_info in operations.items():
@@ -9,65 +8,49 @@ def get_op_potential_new_node(w: tuple[int, int], operations, nodes) -> dict[str
 
     return None
 
-def get_edge(u: tuple[int, int], v: tuple[int, int]):
-    if u[0] == v[0]:
-        return (v, u) if u[1] < v[1] else (u, v)
-
-    elif u[1] == v[1]:
-        return (u, v) if u[0] < v[0] else (v, u)
-
-
 def determine_edge_orientation(edge):
-    """
-    Determine if the given edge is horizontal or vertical.
-
-    :param edge: A tuple representing an edge ((x1, y1), (x2, y2)).
-    :return: A string "horizontal" if the edge is horizontal, "vertical" if the edge is vertical.
-    """
     (x1, y1), (x2, y2) = edge
 
     if y1 == y2:
         return "horizontal"  # The edge is horizontal if the y-coordinates are the same
-    elif x1 == x2:
-        return "vertical"  # The edge is vertical if the x-coordinates are the same
     else:
-        raise ValueError("Invalid edge: The edge must be either horizontal or vertical.")
+        return "vertical"  # The edge is vertical if the x-coordinates are the same
 
 
-def unit_vector_for_movement(w, v, operation, edge):
-    """
-    Decide the unit vector for the movement of node `w` relative to node `v` based on the edge orientation.
-
-    The edge orientation is determined automatically from the edge's coordinates.
-
-    :param w: A tuple representing the position of node `w` (x_w, y_w).
-    :param v: A tuple representing the position of node `v` (x_v, y_v).
-    :param operation: A string indicating the operation on the edge ("contraction" or "expansion").
-    :param edge: A tuple representing an edge ((x1, y1), (x2, y2)).
-    :return: A tuple representing the unit vector of movement (<1, 0>, <0, 1>, <-1, 0>, <0, -1>).
-    """
+def unit_vector_for_movement(operation: str, parallel_edges: list, edge: tuple[tuple[int,int], tuple[int, int]]):
     # Determine if the edge is horizontal or vertical
     edge_orientation = determine_edge_orientation(edge)
 
     if edge_orientation == "horizontal":
-        # Focus on the x-axis: movement left or right
-        dx = w[0] - v[0]
-        unit_x = dx // abs(dx) if dx != 0 else 0
-        unit_y = 0  # No movement in the y-axis for a horizontal edge
+        # if we step from right to left:
+        # edge = (prev, w)
+        if edge[0][0] > edge[1][0]:
+            if operation == "contraction":
+                return 1, 0
+            else:
+                return -1, 0
 
-    elif edge_orientation == "vertical":
-        # Focus on the y-axis: movement up or down
-        dy = w[1] - v[1]
-        unit_x = 0  # No movement in the x-axis for a vertical edge
-        unit_y = dy // abs(dy) if dy != 0 else 0
+        # we step from left to right:
+        else:
+            if operation == "contraction":
+                return -1, 0
+            else:
+                return 1, 0
+    else: # vertical edge
+        # if we step from down to up
+        # edge = (prev, w)
+        if edge[0][1] < edge[1][1]:
+            if operation == "contraction":
+                return 0, -1
+            else:
+                return 0, 1
 
-    # For contraction, we reverse the direction (move towards `v`)
-    if operation == "contraction":
-        return (-unit_x, -unit_y)
-
-    # For expansion, use the unit vector as is (move away from `v`)
-    elif operation == "expansion":
-        return (unit_x, unit_y)
+        # we step from up to down
+        else:
+            if operation == "contraction":
+                return 0, 1
+            else:
+                return 0, -1
 
 def traverse_from_node(
         graph: Graph,
@@ -95,17 +78,18 @@ def traverse_from_node(
             visited.add(w)
 
             prev = path[len(path) - 2]
-            edge = get_edge(w, prev)
-            operation = operations.get(edge)
-
-            if operation is not None:
-                unit_vector = unit_vector_for_movement(w, v, operation[0], edge)
-                vec.insert_vector(unit_vector)
+            edge = (prev, w)
+            operation = graph.get_edge_data(prev,w)
+            if operation is not None and len(operation) != 0:
+                op: str = operation['operation']
+                parallel_edges: list = operation['parallel_edges']
+                unit_vector = unit_vector_for_movement(op, parallel_edges, edge)
+                vec.insert_vector(unit_vector, parallel_edges, edge)
                 #print(f"node: {w} operation: {operation} on edge {edge}")
             #else:
                 #print(f"node: {w} no operation on edge {edge}")
 
-            print(f"node: {w}, edge: {edge}, vec: {vec.multiset}")
+            print(f"node: {w}, edge: {edge}, vec: {vec.get_vectors()}")
 
             if check_interception(vec.get_vectors(), len(graph.nodes), v, w):
                 print(f"Collision detected between {v} and {w}")
@@ -141,8 +125,9 @@ def check_interception(unit_vectors: list[tuple[int, int]], n: int, target_v: tu
 
     w_start_x, w_start_y = start_w
 
-    for j in range(m):
-        remaining_vectors = unit_vectors[:j] + unit_vectors[j+1:]
+    for j in unit_vectors:
+        remaining_vectors = unit_vectors.copy()
+        remaining_vectors.remove(j)
         dp = [[[False for _ in range(max_value + 1)] for _ in range(max_value + 1)] for _ in range(m)]
         dp[0][w_start_x][w_start_y] = True
 
@@ -157,11 +142,12 @@ def check_interception(unit_vectors: list[tuple[int, int]], n: int, target_v: tu
                         if x + v_x <= max_value and y + v_y <= max_value:
                             dp[i+1][x + v_x][y + v_y] = True
 
-        vx_j, vy_j = unit_vectors[j]
+        vx_j, vy_j = j
+        #print(dp)
         for x in range(max_value + 1):
             for y in range(max_value + 1):
                 if dp[len(remaining_vectors) - 1][x][y]:
-                    # Check if moving over vector τ_j causes a collision with v
+                    # Check if moving over vector j causes a collision with v
                     final_x = x + vx_j
                     final_y = y + vy_j
                     if (final_x, final_y) == target_v:

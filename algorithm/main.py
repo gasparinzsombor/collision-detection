@@ -59,8 +59,15 @@ def main():
         ((5, 4), (5, 3)): ("expansion", [((10, 2), (11, 2)), ((6, 2), (7, 2))])
     }
 
+    parallel_operations = [
+        [((1, 6), (2, 6)), ((3, 8), (3, 7))],
+        [((8, 6), (8, 5)), ((9, 6), (10, 6)), ((12, 5), (12, 4))],
+        [((10, 2), (11, 2)), ((6, 2), (7, 2)), ((5, 4), (5, 3))]
+    ]
+
     operations = {
-        ((2, 2), (3, 2)): ("contraction", [])
+        ((2, 2), (3, 2)): ("contraction", []),
+        ((4 ,3), (4, 2)): ("expansion", [])
     }
 
     # Add edges to the graph
@@ -83,10 +90,7 @@ def main():
 
     # start = (4,7)
     start = (2,3)
-
     a.traverse_from_node(G, start, operations)
-
-    # a.traverse_from_node(G, start, operations)
 
     # for node in G.nodes:
     #     print("=== From node: " + str(node) + " ===")
