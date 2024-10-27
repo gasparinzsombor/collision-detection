@@ -108,7 +108,7 @@ def traverse_from_node(
             # to the stack and traverse that coordinate as well
             maybe_new_node = get_op_potential_new_node(w, operations, graph.nodes)
             if maybe_new_node is not None:
-                if graph.nodes.__contains__(maybe_new_node.get("edge")[0]):
+                if maybe_new_node.get("edge")[0] in graph.nodes:
                     new_node: tuple[int, int] = maybe_new_node.get("edge")[1]
                 else:
                     new_node: tuple[int, int] = maybe_new_node.get("edge")[0]

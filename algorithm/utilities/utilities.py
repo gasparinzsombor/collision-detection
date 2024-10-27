@@ -15,7 +15,7 @@ class Vec:
             sorted_tuple_list = sorted(sorted_tuples)
             hash_ = hash(tuple(sorted_tuple_list))
         if hash_ is not None:
-            if self.multiset.__contains__(hash_):
+            if hash_ in self.multiset:
                 # one or more operation already in the multiset, we should add those together
                 old_vector, multiplicity = self.multiset[hash_]
                 self.multiset[hash_] = ((old_vector[0] + vector[0]),(old_vector[1] + vector[1])), multiplicity
@@ -24,7 +24,7 @@ class Vec:
         else:
             # there is no relation with other edges
             hash_ = hash(edge)
-            if self.multiset.__contains__(hash_):
+            if hash_ in self.multiset:
                 new_multiplicity = self.multiset[hash_]
                 new_multiplicity[1] = new_multiplicity[1] + 1
                 self.multiset[hash_] = new_multiplicity
