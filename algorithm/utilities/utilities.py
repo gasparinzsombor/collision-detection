@@ -35,10 +35,6 @@ class Vec:
                 self.multiset[hash_] = new_multiplicity
             else:
                 self.multiset[hash_] = (vector, 1)
-        # if self.multiset.__contains__(vector):
-        #     self.multiset[vector] = self.multiset[vector] + 1
-        # else:
-        #     self.multiset[vector] = 1
 
     def get_vectors(self) -> list[Vector]:
         vectors: list[Vector] = []
