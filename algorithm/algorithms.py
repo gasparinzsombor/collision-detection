@@ -129,4 +129,15 @@ def check_interception(unit_vectors: list[tuple[Vector, list[Edge]]], n: int, ta
     possible_locations = Node.possible_locations(unit_vectors, n)
     print(f"possible movements for {start_w}: {possible_locations}")
 
+    # here we should check if there is any interception with the following parameters:
+    # if 2 nodes are intercepting but there is exactly that many contraction operation
+    # between the 2 nodes that many nodes is between them, then it means we detect
+    # collision between 2 nodes who would end up as 1 node at the end
+    # An example is simple with neighbours:
+    # if there is a big graph and we check v and w node in the graph who are neighbours
+    # and there is a contraction between them: [v] -><- [w]
+    # then when we check that whether w's position can intercept with v we will get a
+    # result True for this case, but in reality it is not a collision
+
+    # we should filter out the above mentioned situation
     return any(start_w.moved_by(loc) == target_v for loc,edges in possible_locations)
