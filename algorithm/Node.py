@@ -1,7 +1,6 @@
-from enum import unique
-from typing import SupportsIndex
-
 from Vector import Vector
+
+Edge = tuple['Node', 'Node']
 
 class Node:
     def __init__(self, x: int, y: int):
@@ -9,35 +8,35 @@ class Node:
         self.y = y
 
     @staticmethod
-    def possible_locations(operations: list[Vector], number_of_nodes: int):
-        possible_locations: list[Vector] = []
-        for last_op in operations:
+    def possible_locations(operations: list[tuple[Vector, list[Edge]]], number_of_nodes: int):
+        possible_locations: list[tuple[Vector, list[Edge]]] = []
+        for last_op, edges in operations:
             remaining_operations = operations.copy()
-            remaining_operations.remove(last_op)
+            remaining_operations.remove((last_op,edges))
 
             m = len(operations)
             n = number_of_nodes
             p = n # padding on each side to avoid negative array indexes
 
-            matrix = [[[False for _ in range(n + 2*p)] for _ in range(n + 2*p)] for _ in range(m)]
-            matrix[0][p][p] = True
+            matrix = [[[(False,[]) for _ in range(n + 2*p)] for _ in range(n + 2*p)] for _ in range(m)]
+            matrix[0][p][p] = True,[]
 
             for i in range(len(remaining_operations)):
                 for x in range(p, n + p):
                     for y in range(p, n + p):
-                        if matrix[i][x][y]:
-                            matrix[i+1][x][y] = True
-                            new_x = x+remaining_operations[i].x
-                            new_y = y+remaining_operations[i].y
-                            matrix[i+1][new_x][new_y] = True
+                        if matrix[i][x][y][0]:
+                            matrix[i+1][x][y] = True, matrix[i+1][x][y][1]
+                            new_x = x+remaining_operations[i][0].x
+                            new_y = y+remaining_operations[i][0].y
+                            matrix[i+1][new_x][new_y] = True, (matrix[i+1][x][y][1] + remaining_operations[i][1])
             result = []
             for x in range(p,n + p):
                 for y in range(p, n + p):
-                    if matrix[len(remaining_operations)][x][y]:
-                        result.append(Vector(x-p,y-p).add(last_op))
+                    if matrix[len(remaining_operations)][x][y][0]:
+                        result.append((Vector(x-p,y-p).add(last_op),matrix[len(remaining_operations)][x][y][1] + edges))
             possible_locations = possible_locations + result
             
-        return list(set(possible_locations))
+        return possible_locations
     
     def moved_by(self, vector: Vector):
         return Node(self.x + vector.x, self.y + vector.y)
