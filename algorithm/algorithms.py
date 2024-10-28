@@ -126,7 +126,7 @@ def unit_vector_for_movement(operation: str, parallel_edges: list[Edge], edge: E
 
 
 def check_interception(unit_vectors: list[Vector], n: int, target_v: Node, start_w: Node) -> bool:
-    possible_locations = start_w.possible_locations(unit_vectors, n)
+    possible_locations = Node.possible_locations(unit_vectors, n)
     print(f"possible movements for {start_w}: {possible_locations}")
 
     return any(start_w.moved_by(loc) == target_v for loc in possible_locations)
