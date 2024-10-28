@@ -7,7 +7,9 @@ class Vec:
     def __init__(self, v: Node, w: Node):
         self.v: Node = v
         self.w: Node = w
-        self.multiset: dict[int, tuple[Vector, int]] = {}
+        self.multiset: dict[int, tuple[Vector, list[Edge]]] = {}
+        #                   hash key -> movement vector, multiplicity, list of edges where the operations are
+        #                   we need all of these information to be able to get back a schedule when we are detecting a collision
 
     def insert_vector(self,
                       vector: Vector,
@@ -22,25 +24,20 @@ class Vec:
         if hash_ is not None:
             if hash_ in self.multiset:
                 # one or more operation already in the multiset, we should add those together
-                old_vector, multiplicity = self.multiset[hash_]
-                self.multiset[hash_] = old_vector.add(vector), multiplicity
+                old_vector, edges = self.multiset[hash_]
+                edges.append(edge)
+                self.multiset[hash_] = old_vector.add(vector), edges
             else:
-                self.multiset[hash_] = (vector, 1)
+                self.multiset[hash_] = (vector, [edge])
         else:
             # there is no relation with other edges
             hash_ = hash(edge)
-            if hash_ in self.multiset:
-                new_multiplicity = self.multiset[hash_]
-                new_multiplicity[1] = new_multiplicity[1] + 1
-                self.multiset[hash_] = new_multiplicity
-            else:
-                self.multiset[hash_] = (vector, 1)
+            self.multiset[hash_] = (vector, [edge])
 
-    def get_vectors(self) -> list[Vector]:
-        vectors: list[Vector] = []
+    def get_vectors(self) -> list[tuple[Vector, list[Edge]]]:
+        vectors: list[tuple[Vector,list[Edge]]] = []
         for e in self.multiset:
             entry = self.multiset[e]
-            for i in range(0,entry[1]):
-                vectors.append(entry[0])
+            vectors.append(entry)
 
         return vectors

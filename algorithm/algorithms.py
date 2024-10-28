@@ -38,7 +38,7 @@ def traverse_from_node(
             if operation is not None and len(operation) != 0:
                 op: str = operation['operation']
                 parallel_edges: list = operation['parallel_edges']
-                unit_vector = unit_vector_for_movement(op, parallel_edges, edge)
+                unit_vector = unit_vector_for_movement(op, edge)
                 vec.insert_vector(unit_vector, parallel_edges, edge)
                 #print(f"node: {w} operation: {operation} on edge {edge}")
             #else:
@@ -89,7 +89,7 @@ def determine_edge_orientation(edge: Edge):
         return "vertical"  # The edge is vertical if the x-coordinates are the same
 
 
-def unit_vector_for_movement(operation: str, parallel_edges: list[Edge], edge: Edge):
+def unit_vector_for_movement(operation: str, edge: Edge):
     # Determine if the edge is horizontal or vertical
     edge_orientation = determine_edge_orientation(edge)
 
@@ -125,8 +125,8 @@ def unit_vector_for_movement(operation: str, parallel_edges: list[Edge], edge: E
                 return Vector(0, -1)
 
 
-def check_interception(unit_vectors: list[Vector], n: int, target_v: Node, start_w: Node) -> bool:
-    possible_locations = Node.possible_locations(unit_vectors, n)
+def check_interception(unit_vectors: list[tuple[Vector, list[Edge]]], n: int, target_v: Node, start_w: Node) -> bool:
+    possible_locations = Node.possible_locations(list(map(lambda x: x[0] ,unit_vectors)), n)
     print(f"possible movements for {start_w}: {possible_locations}")
 
     return any(start_w.moved_by(loc) == target_v for loc in possible_locations)
