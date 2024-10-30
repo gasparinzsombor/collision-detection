@@ -9,8 +9,11 @@ class Vector:
     def __repr__(self):
         return f"({self.x},{self.y})"
     
-    def __eq__(self, value):
-        return self.x == value.x and self.y == self.y
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y
 
     def __hash__(self):
         return hash((self.x, self.y))

@@ -102,13 +102,13 @@ def main():
     plt.show()
 
     #start = Node(4,7)
-    start = Node(10,7)
-    a.traverse_from_node(G, start, operations)
+    #start = Node(8,7)
+    #a.traverse_from_node(G, start, operations)
 
-    # for node in G.nodes:
-    #     print("=== From node: " + str(node) + " ===")
-    #     a.traverse_from_node(G, node, operations)
-    #     print("===============================")
+    for node in G.nodes:
+        print("=== From node: " + str(node) + " ===")
+        a.traverse_from_node(G, node, operations)
+        print("===============================")
 
 if __name__ == "__main__":
     main()
