@@ -132,8 +132,9 @@ def check_interception(
         target_v: Node,
         start_w: Node,
         operations: Operations,
-        path: list[Node]) -> bool:
-    possible_locations = Node.possible_locations(unit_vectors, n)
+        path: list[Node]) -> list[tuple[bool, tuple[Vector, list[list[tuple[Node, Node]]]]]]:
+    reduced_unit_vectors = list({vec[0]: vec for vec in unit_vectors}.values())
+    possible_locations = Node.possible_locations(reduced_unit_vectors, n)
     #print(f"possible movements for {start_w}: {possible_locations}")
 
     # here we should check if there is any interception with the following parameters:
@@ -147,22 +148,24 @@ def check_interception(
     # result True for this case, but in reality it is not a collision
 
     # filter out the above mentioned situation
-    # false_positive_collisions = []
-    # for possible_location in possible_locations:
-    #     flatten_operations = [operation for ops in possible_location[1] for operation in ops]
-    #     contraction_between_v_w = 0
-    #     for op in flatten_operations:
-    #         try:
-    #             if operations[op][0] == 'contraction':
-    #                 contraction_between_v_w += 1
-    #         except(KeyError):
-    #             if operations[op[::-1]][0] == 'contraction':
-    #                 contraction_between_v_w += 1
-    #
-    #     if contraction_between_v_w == len(path) - 1:
-    #         false_positive_collisions.append(possible_location)
-    #
-    # for false_positive_collision in false_positive_collisions:
-    #     possible_locations.remove(false_positive_collision)
+    false_positive_collisions = []
+    for possible_location in possible_locations:
+        flatten_operations = [operation for ops in possible_location[1] for operation in ops]
+        contraction_between_v_w = 0
+        for op in flatten_operations:
+            try:
+                if operations[op][0] == 'contraction':
+                    contraction_between_v_w += 1
+            except(KeyError):
+                if operations[op[::-1]][0] == 'contraction':
+                    contraction_between_v_w += 1
 
-    return any(start_w.moved_by(loc) == target_v for loc,edges in possible_locations)
+        if contraction_between_v_w == len(path) - 1:
+            false_positive_collisions.append(possible_location)
+
+    for false_positive_collision in false_positive_collisions:
+        possible_locations.remove(false_positive_collision)
+
+    possible_collisions: list[tuple[Vector, list[list[tuple[Node, Node]]]]] = list(filter(lambda possible_loc: start_w.moved_by(possible_loc[0]) == target_v, possible_locations))
+
+    return list(zip([True for _ in range(len(possible_collisions))], possible_collisions))

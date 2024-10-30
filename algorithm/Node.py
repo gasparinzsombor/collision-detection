@@ -25,19 +25,27 @@ class Node:
             matrix = [[[(False,[]) for _ in range(n + 2*p)] for _ in range(n + 2*p)] for _ in range(m)]
             matrix[0][p][p] = True,[]
 
+            smallest_x = p
+            smallest_y = p
             for i in range(len(remaining_operations)):
-                for x in range(p, n + p):
-                    for y in range(p, n + p):
+                for x in range(smallest_x, n + p):
+                    for y in range(smallest_y, n + p):
                         if matrix[i][x][y][0]:
                             matrix[i+1][x][y] = True, matrix[i][x][y][1]
                             new_x = x+remaining_operations[i][0].x
                             new_y = y+remaining_operations[i][0].y
-                            new_edges: list[list[Edge]] = matrix[i+1][x][y][1].copy()
+                            new_edges: list[list[Edge]] = matrix[i][x][y][1].copy()
                             new_edges.append(remaining_operations[i][1])
                             matrix[i+1][new_x][new_y] = True, new_edges
+
+                            if new_x < smallest_x:
+                                smallest_x = new_x
+
+                            if new_y < smallest_y:
+                                smallest_y = new_y
             result = []
-            for x in range(p,n + p):
-                for y in range(p, n + p):
+            for x in range(smallest_x,n + p):
+                for y in range(smallest_y, n + p):
                     if (matrix[len(remaining_operations)][x][y][0] and
                         # if the movement vector is (0,0) it is not necessary to put
                         # into the possible locations, if some sub operations of the
