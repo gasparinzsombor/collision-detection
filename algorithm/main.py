@@ -101,8 +101,8 @@ def main():
     plt.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)  # Show ticks
     plt.show()
 
-    start = Node(4,7)
-    # start = Node(2,3)
+    #start = Node(4,7)
+    start = Node(10,7)
     a.traverse_from_node(G, start, operations)
 
     # for node in G.nodes:

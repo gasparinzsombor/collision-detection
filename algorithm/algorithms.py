@@ -1,3 +1,4 @@
+from itertools import count
 from webbrowser import Opera
 from networkx.classes import Graph
 from utilities.utilities import Vec
@@ -44,9 +45,9 @@ def traverse_from_node(
             #else:
                 #print(f"node: {w} no operation on edge {edge}")
 
-            print(f"node: {w}, edge: {edge}, vec: {vec.get_vectors()}")
+            #print(f"node: {w}, edge: {edge}, vec: {vec.get_vectors()}")
 
-            if check_interception(vec.get_vectors(), len(graph.nodes), v, w):
+            if check_interception(vec.get_vectors(), len(graph.nodes), v, w, operations, path):
                 print(f"Collision detected between {v} and {w}")
             else:
                 print(f"No collision between {v} and {w}")
@@ -125,9 +126,15 @@ def unit_vector_for_movement(operation: str, edge: Edge):
                 return Vector(0, -1)
 
 
-def check_interception(unit_vectors: list[tuple[Vector, list[Edge]]], n: int, target_v: Node, start_w: Node) -> bool:
+def check_interception(
+        unit_vectors: list[tuple[Vector, list[Edge]]],
+        n: int,
+        target_v: Node,
+        start_w: Node,
+        operations: Operations,
+        path: list[Node]) -> bool:
     possible_locations = Node.possible_locations(unit_vectors, n)
-    print(f"possible movements for {start_w}: {possible_locations}")
+    #print(f"possible movements for {start_w}: {possible_locations}")
 
     # here we should check if there is any interception with the following parameters:
     # if 2 nodes are intercepting but there is exactly that many contraction operation
@@ -139,5 +146,23 @@ def check_interception(unit_vectors: list[tuple[Vector, list[Edge]]], n: int, ta
     # then when we check that whether w's position can intercept with v we will get a
     # result True for this case, but in reality it is not a collision
 
-    # we should filter out the above mentioned situation
+    # filter out the above mentioned situation
+    # false_positive_collisions = []
+    # for possible_location in possible_locations:
+    #     flatten_operations = [operation for ops in possible_location[1] for operation in ops]
+    #     contraction_between_v_w = 0
+    #     for op in flatten_operations:
+    #         try:
+    #             if operations[op][0] == 'contraction':
+    #                 contraction_between_v_w += 1
+    #         except(KeyError):
+    #             if operations[op[::-1]][0] == 'contraction':
+    #                 contraction_between_v_w += 1
+    #
+    #     if contraction_between_v_w == len(path) - 1:
+    #         false_positive_collisions.append(possible_location)
+    #
+    # for false_positive_collision in false_positive_collisions:
+    #     possible_locations.remove(false_positive_collision)
+
     return any(start_w.moved_by(loc) == target_v for loc,edges in possible_locations)
