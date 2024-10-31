@@ -1,13 +1,27 @@
 from networkx.classes import Graph
-from utilities.utilities import Vec
+from Vec import Vec
 from Node import Node
 from Vector import Vector
+from algorithm.utilities.utilities import parse_graph
 
 Edge = tuple[Node, Node]
 Operations = dict[
             Edge,
             tuple[str, list[Edge]]
         ]
+
+def do(filename: str) -> list[tuple[Node, Node, list[list[Edge]]]]:
+    g, operations = parse_graph(filename)
+
+    result: list[tuple[Node, Node, list[list[Edge]]]] = []
+
+    for node in g.nodes:
+        print("=== From node: " + str(node) + " ===")
+        result += traverse_from_node(g, node, operations)
+        print("===============================")
+
+    #print(result)
+    return result
 
 def traverse_from_node(
         graph: Graph,
