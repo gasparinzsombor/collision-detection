@@ -1,3 +1,5 @@
+from collections import Counter
+
 from Vector import Vector
 
 Edge = tuple['Node', 'Node']
@@ -8,11 +10,22 @@ class Node:
         self.y = y
 
     @staticmethod
-    def possible_locations(operations: list[tuple[Vector, list[Edge]]], number_of_nodes: int):
+    def possible_locations(operations: list[tuple[Vector, list[Edge]]], number_of_nodes: int, optimal = False):
         possible_locations: list[tuple[Vector, list[list[Edge]]]] = []
         for last_op, edges in operations:
             remaining_operations = operations.copy()
             remaining_operations.remove((last_op,edges))
+
+            summed_vector = Vector(0,0)
+            summed_edges: list[list[Edge]] = []
+
+            if optimal:
+                not_unique_vectors: list[tuple[Vector, list[Edge]]] = Node.get_entries_with_more_first_tuple_occurrence(remaining_operations)
+                for not_unique_vector, not_unique_edges in not_unique_vectors:
+                    remaining_operations.remove((not_unique_vector,not_unique_edges))
+                    summed_vector = summed_vector.add(not_unique_vector)
+                    summed_edges.append(not_unique_edges)
+
 
             m = len(operations)
             n = number_of_nodes
@@ -50,10 +63,11 @@ class Node:
                         # if the movement vector is (0,0) it is not necessary to put
                         # into the possible locations, if some sub operations of the
                         # (0,0) vector causes a collision we will find it in another entry
-                            Vector(x-p,y-p).add(last_op) != Vector(0,0)):
+                            Vector(x-p,y-p).add(last_op).add(summed_vector) != Vector(0,0)):
                         new_edges: list[list[Edge]] = matrix[len(remaining_operations)][x][y][1].copy()
                         new_edges.append(edges)
-                        result.append((Vector(x-p,y-p).add(last_op),new_edges))
+                        new_edges += summed_edges
+                        result.append((Vector(x-p,y-p).add(last_op).add(summed_vector),new_edges))
             possible_locations = possible_locations + result
             
         return possible_locations
@@ -67,6 +81,12 @@ class Node:
     @staticmethod
     def from_tuple(tuple: tuple[int, int]):
         return Node(tuple[0], tuple[1])
+
+    @staticmethod
+    def get_entries_with_more_first_tuple_occurrence(vectors: list[tuple[Vector, list[Edge]]]) -> list[tuple[Vector, list[Edge]]]:
+        vectors_counts = Counter(v[0] for v in vectors)
+
+        return [v for v in vectors if vectors_counts[v[0]] > 1]
     
     def __eq__(self, value) -> bool:
         return self.x == value.x and self.y == value.y
