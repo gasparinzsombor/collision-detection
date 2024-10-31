@@ -105,10 +105,13 @@ def main():
     #start = Node(8,7)
     #a.traverse_from_node(G, start, operations)
 
+    result = []
+
     for node in G.nodes:
         print("=== From node: " + str(node) + " ===")
-        a.traverse_from_node(G, node, operations)
+        result += a.traverse_from_node(G, node, operations)
         print("===============================")
 
+    print(result)
 if __name__ == "__main__":
     main()
