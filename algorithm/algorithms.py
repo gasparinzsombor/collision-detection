@@ -16,7 +16,7 @@ def traverse_from_node(
         # key is the two coord of an edge
         # value is a tuple of type of operation (expansion / contraction) and a list of coupled operations
         # the coupled operations are also part of the operations dict
-    ) ->  list[tuple[Vector, list[list[Edge]]]]:
+    ) ->  list[tuple[Node, Node, list[list[Edge]]]]:
 
     visited: set[Node] = set()
     stack: list[
@@ -26,7 +26,7 @@ def traverse_from_node(
             Vec # multiset of vectors on the path from v to actual node
         ]
     ] = [(v, [v], Vec(v,v))]
-    interceptions: list[tuple[Vector, list[list[Edge]]]] = []
+    interceptions: list[tuple[Node, Node, list[list[Edge]]]] = []
     while stack:
         (w, path, vec) = stack.pop()
         if w not in visited:
@@ -44,7 +44,8 @@ def traverse_from_node(
             #print(f"node: {w}, edge: {edge}, vec: {vec.get_vectors()}")
 
             possible_interceptions = check_interception(vec.get_vectors(), len(graph.nodes), v, w, operations, path)
-            interceptions += possible_interceptions
+            for unit_vec, edges in possible_interceptions:
+                interceptions += list(tuple([v,w,edges]))
 
             # add all neighbours to the stack
             if w in graph.nodes:
@@ -129,8 +130,8 @@ def check_interception(
         start_w: Node,
         operations: Operations,
         path: list[Node]) -> list[tuple[Vector, list[list[Edge]]]]:
-    reduced_unit_vectors = list({vec[0]: vec for vec in unit_vectors}.values())
-    possible_locations = Node.possible_locations(reduced_unit_vectors, n)
+    #reduced_unit_vectors = list({vec[0]: vec for vec in unit_vectors}.values())
+    possible_locations = Node.possible_locations(unit_vectors, n)
     #print(f"possible movements for {start_w}: {possible_locations}")
 
     # here we should check if there is any interception with the following parameters:
