@@ -88,8 +88,8 @@ class Node:
 
         return [v for v in vectors if vectors_counts[v[0]] > 1]
     
-    def __eq__(self, value) -> bool:
-        return self.x == value.x and self.y == value.y
+    def __eq__(self, other) -> bool:
+        return self.x == other.x and self.y == other.y
     
     def __lt__(self, other):
          return (self.x, self.y) < (other.x, other.y)

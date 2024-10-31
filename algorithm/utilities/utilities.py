@@ -1,43 +1,91 @@
+import networkx
+from networkx import Graph
+import ast
 from Node import Node
-from Vector import Vector
 
 Edge = tuple[Node, Node]
+Operations = dict[
+            Edge,
+            tuple[str, list[Edge]]
+        ]
 
-class Vec:
-    def __init__(self, v: Node, w: Node):
-        self.v: Node = v
-        self.w: Node = w
-        self.multiset: dict[int, tuple[Vector, list[Edge]]] = {}
-        #                   hash key -> movement vector, multiplicity, list of edges where the operations are
-        #                   we need all of these information to be able to get back a schedule when we are detecting a collision
+def read_from_file(filename: str) -> list[str] | None:
+    try:
+        with open(filename, 'r') as file:
+            content = file.readlines()
+            content = [line.strip() for line in content]
+            return content
+    except FileNotFoundError as ke:
+        print(f"Error: file not found {ke}")
+    except Exception as e:
+        print(f"Error: An error occurred: {e}")
 
-    def insert_vector(self,
-                      vector: Vector,
-                      parallel_edges: list[Edge],
-                      edge: Edge):
-        hash_ = None
-        if len(parallel_edges) != 0:
-            parallel_edges.append(edge)
-            sorted_tuples = [tuple(sorted(t)) for t in parallel_edges]
-            sorted_tuple_list = sorted(sorted_tuples)
-            hash_ = hash(tuple(sorted_tuple_list))
-        if hash_ is not None:
-            if hash_ in self.multiset:
-                # one or more operation already in the multiset, we should add those together
-                old_vector, edges = self.multiset[hash_]
-                edges.append(edge)
-                self.multiset[hash_] = old_vector.add(vector), edges
-            else:
-                self.multiset[hash_] = (vector, [edge])
+    return None
+
+def parse_graph(filename: str) -> tuple[Graph,Operations] | None:
+    lines = read_from_file(filename)
+
+    if lines is None:
+        return None
+
+    nodes_str = lines[0]
+    edges_str = lines[1]
+    operations_str = lines[2]
+
+    g: Graph = networkx.Graph()
+
+    nodes = parse_nodes(nodes_str)
+
+    for node in nodes:
+        g.add_node(node)
+
+    operations = parse_operations(operations_str)
+    edges = parse_edges(edges_str)
+
+    for edge in edges:
+        start = edge[0]
+        end = edge[1]
+
+        if (start, end) in operations:
+            g.add_edge(start, end, operation=operations[(start, end)][0], parallel_edges=operations[(start, end)][1])
         else:
-            # there is no relation with other edges
-            hash_ = hash(edge)
-            self.multiset[hash_] = (vector, [edge])
+            g.add_edge(start, end)
 
-    def get_vectors(self) -> list[tuple[Vector, list[Edge]]]:
-        vectors: list[tuple[Vector,list[Edge]]] = []
-        for e in self.multiset:
-            entry = self.multiset[e]
-            vectors.append(entry)
+    return g, operations
 
-        return vectors
+def parse_nodes(nodes_str: str) -> list[Node]:
+    nodes: list[Node] = []
+    split_nodes: list[str] = nodes_str.split(";")
+    for node_str in split_nodes:
+        node_tuple: tuple[int, int] = eval(node_str)
+        nodes.append(Node(node_tuple[0],node_tuple[1]))
+
+    return nodes
+
+def parse_edges(edges_str: str) -> list[Edge]:
+    edges: list[Edge] = []
+    split_edges: list[str] = edges_str.split(";")
+    for edge_str in split_edges:
+        edge_tuple: Edge = eval(edge_str)
+        edges.append(
+            (Node(edge_tuple[0][0],edge_tuple[0][1]),
+             Node(edge_tuple[1][0],edge_tuple[1][1]))
+        )
+
+    return edges
+
+def parse_operations(operations_str: str) -> Operations:
+    operations: Operations = {}
+    split_operations: list[str] = operations_str.split(";")
+    for operation_str in split_operations:
+        tuple_operation = ast.literal_eval(operation_str)
+        main_edge = (Node(tuple_operation[0][0][0], tuple_operation[0][0][1]), Node(tuple_operation[0][1][0], tuple_operation[0][1][1]))
+        parallel_operations = []
+        for edge in tuple_operation[2]:
+            parallel_operations.append(
+                (Node(edge[0][0], edge[0][1]),
+                 Node(edge[1][0], edge[1][1]))
+            )
+        operations[main_edge] = tuple_operation[1], parallel_operations
+
+    return operations
