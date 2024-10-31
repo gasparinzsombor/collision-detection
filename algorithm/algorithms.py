@@ -1,5 +1,3 @@
-from itertools import count
-from webbrowser import Opera
 from networkx.classes import Graph
 from utilities.utilities import Vec
 from Node import Node
@@ -18,7 +16,7 @@ def traverse_from_node(
         # key is the two coord of an edge
         # value is a tuple of type of operation (expansion / contraction) and a list of coupled operations
         # the coupled operations are also part of the operations dict
-    ):
+    ) ->  list[tuple[Vector, list[list[Edge]]]]:
 
     visited: set[Node] = set()
     stack: list[
@@ -28,6 +26,7 @@ def traverse_from_node(
             Vec # multiset of vectors on the path from v to actual node
         ]
     ] = [(v, [v], Vec(v,v))]
+    interceptions: list[tuple[Vector, list[list[Edge]]]] = []
     while stack:
         (w, path, vec) = stack.pop()
         if w not in visited:
@@ -41,16 +40,11 @@ def traverse_from_node(
                 parallel_edges: list = operation['parallel_edges']
                 unit_vector = unit_vector_for_movement(op, edge)
                 vec.insert_vector(unit_vector, parallel_edges, edge)
-                #print(f"node: {w} operation: {operation} on edge {edge}")
-            #else:
-                #print(f"node: {w} no operation on edge {edge}")
 
             #print(f"node: {w}, edge: {edge}, vec: {vec.get_vectors()}")
 
-            if check_interception(vec.get_vectors(), len(graph.nodes), v, w, operations, path):
-                print(f"Collision detected between {v} and {w}")
-            else:
-                print(f"No collision between {v} and {w}")
+            possible_interceptions = check_interception(vec.get_vectors(), len(graph.nodes), v, w, operations, path)
+            interceptions += possible_interceptions
 
             # add all neighbours to the stack
             if w in graph.nodes:
@@ -71,6 +65,8 @@ def traverse_from_node(
                 new_vec = Vec(v, new_node)
                 new_vec.multiset = vec.multiset.copy()
                 stack.append((new_node, path + [new_node], new_vec))
+
+    return interceptions
 
 
 
@@ -132,7 +128,7 @@ def check_interception(
         target_v: Node,
         start_w: Node,
         operations: Operations,
-        path: list[Node]) -> list[tuple[bool, tuple[Vector, list[list[tuple[Node, Node]]]]]]:
+        path: list[Node]) -> list[tuple[Vector, list[list[Edge]]]]:
     reduced_unit_vectors = list({vec[0]: vec for vec in unit_vectors}.values())
     possible_locations = Node.possible_locations(reduced_unit_vectors, n)
     #print(f"possible movements for {start_w}: {possible_locations}")
@@ -166,6 +162,6 @@ def check_interception(
     for false_positive_collision in false_positive_collisions:
         possible_locations.remove(false_positive_collision)
 
-    possible_collisions: list[tuple[Vector, list[list[tuple[Node, Node]]]]] = list(filter(lambda possible_loc: start_w.moved_by(possible_loc[0]) == target_v, possible_locations))
+    possible_collisions: list[tuple[Vector, list[list[Edge]]]] = list(filter(lambda possible_loc: start_w.moved_by(possible_loc[0]) == target_v, possible_locations))
 
-    return list(zip([True for _ in range(len(possible_collisions))], possible_collisions))
+    return possible_collisions
