@@ -130,8 +130,7 @@ def check_interception(
         start_w: Node,
         operations: Operations,
         path: list[Node]) -> list[tuple[Vector, list[list[Edge]]]]:
-    #reduced_unit_vectors = list({vec[0]: vec for vec in unit_vectors}.values())
-    possible_locations = Node.possible_locations(unit_vectors, n)
+    possible_locations = Node.possible_locations(unit_vectors, n, False)
     #print(f"possible movements for {start_w}: {possible_locations}")
 
     # here we should check if there is any interception with the following parameters:
