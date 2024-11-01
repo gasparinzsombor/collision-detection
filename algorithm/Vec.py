@@ -1,5 +1,5 @@
-from Node import Node
-from Vector import Vector
+from algorithm.Node import Node
+from algorithm.Vector import Vector
 
 Edge = tuple[Node, Node]
 
