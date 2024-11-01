@@ -7,18 +7,18 @@ class Vec:
     def __init__(self, v: Node, w: Node):
         self.v: Node = v
         self.w: Node = w
-        self.multiset: dict[int, tuple[Vector, list[Edge]]] = {}
+        self.multiset: dict[int, tuple[Vector, list[tuple[Edge, str]]]] = {}
         #                   hash key -> movement vector, multiplicity, list of edges where the operations are
         #                   we need all of these information to be able to get back a schedule when we are detecting a collision
 
     def insert_vector(self,
                       vector: Vector,
-                      parallel_edges: list[Edge],
-                      edge: Edge):
+                      parallel_edges: list[tuple[Edge, str]],
+                      edge: tuple[Edge, str]):
         hash_ = None
         if len(parallel_edges) != 0:
             parallel_edges.append(edge)
-            sorted_tuples = [tuple(sorted(t)) for t in parallel_edges]
+            sorted_tuples = [tuple(sorted(edge)) for edge, op in parallel_edges]
             sorted_tuple_list = sorted(sorted_tuples)
             hash_ = hash(tuple(sorted_tuple_list))
         if hash_ is not None:
@@ -34,8 +34,9 @@ class Vec:
             hash_ = hash(edge)
             self.multiset[hash_] = (vector, [edge])
 
-    def get_vectors(self) -> list[tuple[Vector, list[Edge]]]:
-        vectors: list[tuple[Vector,list[Edge]]] = []
+
+    def get_vectors(self) -> list[tuple[Vector, list[tuple[Edge, str]]]]:
+        vectors: list[tuple[Vector,list[tuple[Edge, str]]]] = []
         for e in self.multiset:
             entry = self.multiset[e]
             vectors.append(entry)
