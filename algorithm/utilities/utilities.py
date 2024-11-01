@@ -1,7 +1,7 @@
 import networkx
 from networkx import Graph
 import ast
-from Node import Node
+from algorithm.Node import Node
 
 Edge = tuple[Node, Node]
 Operations = dict[

@@ -1,6 +1,6 @@
 from collections import Counter
 
-from Vector import Vector
+from algorithm.Vector import Vector
 
 Edge = tuple['Node', 'Node']
 

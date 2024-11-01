@@ -3,10 +3,11 @@ from data.network_model import create_network, generate_trace, simulate_step
 from plotly import graph_objects as go
 from dash import Dash, Input, Output, State, no_update, callback
 from dash.exceptions import PreventUpdate
+import algorithm.algorithms as a
 
 def get_layout():
-    g, pos = create_network()
-    edge_trace, node_trace = generate_trace(g, pos)
+    g, pos, operations = create_network()
+    edge_trace, node_trace = generate_trace(g)
 
     fig = go.Figure(data=[edge_trace, node_trace])
     fig.update_layout(
@@ -14,7 +15,7 @@ def get_layout():
         hovermode='closest',
         margin=dict(b=0, l=0, r=0, t=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, autorange="reversed"),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         xaxis_scaleanchor="y", yaxis_scaleratio=1
     )
 
@@ -69,19 +70,23 @@ def update_simulation(n_clicks):
     if n_clicks is None:
         raise PreventUpdate
 
-    g, pos = create_network()
+    g, pos, operations = create_network()
     edge_trace, node_trace = generate_trace(g, pos)
 
-    node_trace.marker.color = ['red' if node in ['v', 'w'] else 'green' for node in g.nodes()]
-    node_trace.marker.size = [40 if node in ['v', 'w'] else 40 for node in g.nodes()]
+    result = a.do(g, operations)
+
+    print(result)
+
+    #node_trace.marker.color = ['red' if node in ['v', 'w'] else 'green' for node in g.nodes]
+    #node_trace.marker.size = [40 if node in ['v', 'w'] else 40 for node in g.nodes]
 
     fig = go.Figure(data=[edge_trace, node_trace])
-    fig.update_layout(
-        showlegend=False,
-        hovermode='closest',
-        margin=dict(b=0, l=0, r=0, t=0),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, autorange="reversed"),
-        xaxis_scaleanchor="y", yaxis_scaleratio=1
-    )
+    # fig.update_layout(
+    #     showlegend=False,
+    #     hovermode='closest',
+    #     margin=dict(b=0, l=0, r=0, t=0),
+    #     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    #     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    #     xaxis_scaleanchor="y", yaxis_scaleratio=1
+    # )
     return fig
