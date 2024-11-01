@@ -1,55 +1,40 @@
-from dash import html, dcc
-from data.network_model import create_network, generate_trace
+from dash import html, dcc, callback
+from data.network_model import create_network, generate_trace, simulate_step
 from plotly import graph_objects as go
+from dash import Dash, Input, Output, State, no_update, callback
+from dash.exceptions import PreventUpdate
 
 def get_layout():
-    # Create network and position data
     g, pos = create_network()
     edge_trace, node_trace = generate_trace(g, pos)
 
-    # Create the main graph for visualizing the node grid
     fig = go.Figure(data=[edge_trace, node_trace])
     fig.update_layout(
         showlegend=False,
         hovermode='closest',
         margin=dict(b=0, l=0, r=0, t=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, autorange="reversed"),
         xaxis_scaleanchor="y", yaxis_scaleratio=1
     )
 
-    # Layout construction with enhanced CSS styles
     layout = html.Div([
-        # Header
         html.Div([
             html.H1('Collision Detection Algorithm Visualization'),
             html.P('Interactive demonstration with node grid and vector handling'),
         ], className='header'),
 
-        # Content Row
         html.Div([
-            # Visualization Area: Central Graph for displaying the node grid and vectors
             html.Div([
-                dcc.Graph(id='graph', figure=fig, style={'height': '70vh'}),
+                dcc.Graph(id='graph', figure=fig, style={
+                'height': '70vh',
+                'transform': 'rotate(0deg)',  # Rotate 90 degrees counterclockwise
+                'transform-origin': 'center center'  # Ensures the rotation is around the center
+            }),
                 html.Div(id='vector-display', className='vector-display', children='Vectors will be displayed here.'),
             ], className='visualization-area'),
 
-            # Control Panel (Left Sidebar)
             html.Div([
-                html.H2('Algorithm Parameters'),
-                dcc.Input(id='node-id-input', type='number', placeholder='Enter node ID', min=0, max=len(g.nodes)-1, className='input-field'),
-                dcc.Dropdown(
-                    id='coupling-type',
-                    options=[
-                        {'label': 'Constant Size', 'value': 'constant'},
-                        {'label': 'Horizontal Only', 'value': 'horizontal'},
-                        {'label': 'Vertical Only', 'value': 'vertical'}
-                    ],
-                    placeholder='Select Coupling Type',
-                    className='dropdown'
-                ),
-                html.Button('Generate Nodes and Vectors', id='generate-nodes-btn', className='action-button'),
-                html.Div(id='output-container', className='output-container', children='Configure parameters and click "Generate".'),
 
                 html.H2('Simulation Controls'),
                 html.Button('Start Simulation', id='start-simulation-btn', className='action-button'),
@@ -61,7 +46,6 @@ def get_layout():
                 )
             ], className='control-panel'),
 
-            # Information Panel (Right Sidebar)
             html.Div([
                 html.H2('Algorithm Status'),
                 html.Div(id='status-output', className='status-output', children='Simulation not started.'),
@@ -75,3 +59,29 @@ def get_layout():
 
     return layout, pos
 
+
+@callback(
+    Output('graph', 'figure'),
+    Input('start-simulation-btn', 'n_clicks'),
+    prevent_initial_call=True
+)
+def update_simulation(n_clicks):
+    if n_clicks is None:
+        raise PreventUpdate
+
+    g, pos = create_network()
+    edge_trace, node_trace = generate_trace(g, pos)
+
+    node_trace.marker.color = ['red' if node in ['v', 'w'] else 'green' for node in g.nodes()]
+    node_trace.marker.size = [40 if node in ['v', 'w'] else 40 for node in g.nodes()]
+
+    fig = go.Figure(data=[edge_trace, node_trace])
+    fig.update_layout(
+        showlegend=False,
+        hovermode='closest',
+        margin=dict(b=0, l=0, r=0, t=0),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, autorange="reversed"),
+        xaxis_scaleanchor="y", yaxis_scaleratio=1
+    )
+    return fig
