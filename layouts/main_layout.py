@@ -1,92 +1,104 @@
-from dash import html, dcc, callback
-from data.network_model import create_network, generate_trace, simulate_step
+from dash import html, dcc, callback, dash_table, Output, Input, State
+from data.network_model import create_network, generate_trace
 from plotly import graph_objects as go
-from dash import Dash, Input, Output, State, no_update, callback
-from dash.exceptions import PreventUpdate
 import algorithm.algorithms as a
 
 def get_layout():
     g, pos, operations = create_network()
-    edge_trace, node_trace = generate_trace(g)
+    edge_trace, node_trace = generate_trace(g,operations)
 
-    fig = go.Figure(data=[edge_trace, node_trace])
-    fig.update_layout(
+    fig = go.Figure(data=[node_trace] + edge_trace , layout=dict(
         showlegend=False,
         hovermode='closest',
         margin=dict(b=0, l=0, r=0, t=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         xaxis_scaleanchor="y", yaxis_scaleratio=1
-    )
+    ))
 
     layout = html.Div([
+        dcc.Store(id='algo-started', data={'started': False}),
         html.Div([
             html.H1('Collision Detection Algorithm Visualization'),
-            html.P('Interactive demonstration with node grid and vector handling'),
+            html.P('Interactive demonstration with node grid'),
         ], className='header'),
 
         html.Div([
-            html.Div([
-                dcc.Graph(id='graph', figure=fig, style={
-                'height': '70vh',
-                'transform': 'rotate(0deg)',  # Rotate 90 degrees counterclockwise
-                'transform-origin': 'center center'  # Ensures the rotation is around the center
-            }),
-                html.Div(id='vector-display', className='vector-display', children='Vectors will be displayed here.'),
-            ], className='visualization-area'),
+            dcc.Graph(id='graph', figure=fig),
+            html.Div(id='vector-display', className='vector-display', children='Press the button!'),
+        ], className='visualization-area'),
 
-            html.Div([
-
-                html.H2('Simulation Controls'),
-                html.Button('Start Simulation', id='start-simulation-btn', className='action-button'),
-                html.Button('Pause Simulation', id='pause-simulation-btn', className='action-button'),
-                dcc.Slider(0, 100, 5, value=50, id='speed-slider',
-                    marks={i: str(i) for i in range(0, 101, 10)},
-                    tooltip={"placement": "bottom", "always_visible": True},
-                    className='slider'
-                )
-            ], className='control-panel'),
-
-            html.Div([
-                html.H2('Algorithm Status'),
-                html.Div(id='status-output', className='status-output', children='Simulation not started.'),
-                html.H2('Performance Metrics'),
-                html.Div(id='performance-metrics', className='performance-metrics', children='Metrics will be displayed here.'),
-                html.H2('Detailed Log'),
-                html.Div(id='detailed-log', className='detailed-log', children='Log will be updated here.'),
-            ], className='information-panel')
-        ], className='content-row'),
+        html.Div([
+            html.H2('Simulation Controls'),
+            html.Button('Start Algorithm', id='start-algo-btn', className='action-button'),
+            html.Div(id='sim-button-container'),
+            html.H2('Detailed Log'),
+            dash_table.DataTable(
+                id='log-table',
+                columns=[
+                    {'name': 'Node 1', 'id': 'node1'},
+                    {'name': 'Node 2', 'id': 'node2'},
+                    {'name': 'Operations', 'id': 'operations'}
+                ],
+                data=[],
+                style_table={'overflowX': 'auto'},
+                style_cell={'height': 'auto', 'minWidth': '300px', 'width': '300px', 'maxWidth': '300px', 'whiteSpace': 'normal'}
+            )
+        ], className='control-panel'),
     ], className='main-container')
-
-    return layout, pos
+    return layout
 
 
 @callback(
-    Output('graph', 'figure'),
-    Input('start-simulation-btn', 'n_clicks'),
+    [Output('log-table', 'data'), Output('graph', 'figure')],
+    Input('start-algo-btn', 'n_clicks'),
     prevent_initial_call=True
 )
-def update_simulation(n_clicks):
-    if n_clicks is None:
-        raise PreventUpdate
 
+def update_log_and_graph(n_clicks):
     g, pos, operations = create_network()
-    edge_trace, node_trace = generate_trace(g, pos)
+    res = a.do(g, operations)
+    edge_trace, node_trace = generate_trace(g, operations)
+    print(res)
+    data = [{
+        'node1': f"N({op[0].x}, {op[0].y})",
+        'node2': f"N({op[1].x}, {op[1].y})",
+        'operations': '; '.join([', '.join([f"{action}" for action in sublist]) for sublist in op[2]])
+    } for op in res]
 
-    result = a.do(g, operations)
+    fig = go.Figure(data=[node_trace] + edge_trace, layout=dict(
+        showlegend=False,
+        hovermode='closest',
+        margin=dict(b=0, l=0, r=0, t=0),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        xaxis_scaleanchor="y", yaxis_scaleratio=1
+    ))
 
-    print(result)
+    return data, fig
 
-    #node_trace.marker.color = ['red' if node in ['v', 'w'] else 'green' for node in g.nodes]
-    #node_trace.marker.size = [40 if node in ['v', 'w'] else 40 for node in g.nodes]
+@callback(
+    Output('algo-started', 'data'),
+    Input('start-algo-btn', 'n_clicks'),
+    prevent_initial_call=True
+)
+def set_algo_started(n_clicks):
+    return {'started': True}
 
-    fig = go.Figure(data=[edge_trace, node_trace])
-    # fig.update_layout(
-    #     showlegend=False,
-    #     hovermode='closest',
-    #     margin=dict(b=0, l=0, r=0, t=0),
-    #     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-    #     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-    #     xaxis_scaleanchor="y", yaxis_scaleratio=1
-    # )
-    return fig
+@callback(
+    Output('sim-button-container', 'children'),
+    Input('algo-started', 'data')
+)
+def display_sim_button(data):
+    if data and data['started'] :
+        return html.Button('Start Simulation', id='start-sim-btn', className='action-button')
+    return ""
+
+@callback(
+    Output('vector-display', 'children'),
+    Input('start-sim-btn', 'n_clicks'),
+    prevent_initial_call=True
+)
+def dummy_action(n_clicks):
+    return ""
+
