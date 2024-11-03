@@ -1,15 +1,22 @@
+from typing import Any
+from webbrowser import Opera
+from matplotlib.pyplot import scatter
 import networkx as nx
+from networkx import Graph
+from networkx import neighbors
 import plotly.graph_objects as go
 import algorithm.utilities.utilities
 from algorithm.utilities.utilities import parse_graph
+from algorithm.Node import Node
+from algorithm.algorithms import Edge, Operations, Operation
 
-def create_network():
-    G, operations = parse_graph("examples/example-graph-2.txt")
+def create_network() -> tuple[Graph, Any, Operations]:
+    G, operations = parse_graph("examples/example-graph-1.txt")
 
     return G, list(map(lambda node: (node.x, node.y), G.nodes)), operations
 
 
-def generate_trace(G, operations):
+def generate_trace(G: Graph, operations: Operations) -> tuple[list[go.Scatter], go.Scatter]:
     traces = []
     for edge in G.edges:
         x0, y0 = edge[0].as_tuple()
@@ -53,8 +60,79 @@ def generate_trace(G, operations):
 
     return traces, node_trace
 
-def simulate_step(parsed_data):
-    pass
+def copy_graph(graph: nx.Graph) -> nx.Graph:
+    """Creates a copy of the graph."""
+    return graph.copy()
+
+def transfer_neighbors(graph: nx.Graph, keep_node: Node, remove_node: Node):
+    """Transfers all neighbors of remove_node to keep_node, avoiding self-loops."""
+    for neighbor in list(graph.neighbors(remove_node)):
+        if neighbor != keep_node:  # Avoid self-loop
+            graph.add_edge(keep_node, neighbor)
+    
+def identify_side_nodes(graph: nx.Graph, keep_node: Node, remove_node: Node) -> list[Node]:
+    """Identifies nodes on the side of the remove_node based on distance."""
+    nodes_to_move = []
+    for node in graph.nodes:
+        # Calculate "distance" to keep_node and remove_node
+        dist_to_remove = abs(node.x - remove_node.x) + abs(node.y - remove_node.y)
+        dist_to_keep = abs(node.x - keep_node.x) + abs(node.y - keep_node.y)
+        
+        if dist_to_remove < dist_to_keep and node != remove_node:
+            nodes_to_move.append(node)
+    
+    return nodes_to_move
+
+def move_nodes(g: Graph, nodes: list, move_x: int, move_y: int):
+    """Moves each node in the nodes list by (move_x, move_y)."""
+    print(f"nodes: {nodes}, move_x: {move_x}, move_y: {move_y}")
+    for node in nodes:
+        move_node(g, node, move_x, move_y)
+
+def move_node(g: Graph, node: Node, move_x: int, move_y: int):
+    new_node = Node(node.x + move_x, node.y + move_y)
+    g.add_node(new_node)
+
+    neighbors = list(g.neighbors(node))
+    g.remove_node(node)
+
+    print(f"neighbors for node {node}: {list(neighbors)}")
+    for neighbor in neighbors:
+        g.add_edge(new_node, neighbor)
+    print(f"Neighbors of {new_node}: {list(g.neighbors(new_node))}")
+
+
+def apply_operation_on_graph(graph: nx.Graph, operation: Operation) -> nx.Graph:
+    """Applies the given operation (e.g., contraction) on the graph copy."""
+    # Unpack the operation details
+    (node1, node2), op_type = operation
+    
+    # Copy the graph
+    graph_copy = copy_graph(graph)
+    
+    if op_type == 'contraction':
+        # Ensure both nodes are in the graph
+        if node1 in graph_copy and node2 in graph_copy:
+            # Decide which node to keep and which to remove
+            keep_node, remove_node = node1, node2
+            
+            # Transfer neighbors from remove_node to keep_node
+            transfer_neighbors(graph_copy, keep_node, remove_node)
+            
+            # Identify the nodes on the side of the removed node
+            nodes_to_move = identify_side_nodes(graph_copy, keep_node, remove_node)
+
+            # Remove the contracted node
+            graph_copy.remove_node(remove_node)
+            
+            # Calculate movement vector
+            move_x = keep_node.x - remove_node.x
+            move_y = keep_node.y - remove_node.y
+            
+            # Move identified nodes
+            move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+    
+    return graph_copy
 
 def parse_simulation_data(d):
     pass

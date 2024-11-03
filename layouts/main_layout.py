@@ -1,5 +1,6 @@
 from dash import html, dcc, callback, dash_table, Output, Input, State
-from data.network_model import create_network, generate_trace
+import dash
+from data.network_model import apply_operation_on_graph, create_network, generate_trace
 from plotly import graph_objects as go
 import algorithm.algorithms as a
 
@@ -18,6 +19,9 @@ def get_layout():
 
     layout = html.Div([
         dcc.Store(id='algo-started', data={'started': False}),
+        dcc.Store(id='simulation-steps', data=[]),
+        dcc.Store(id='current-step', data=0),
+        dcc.Interval(id='simulation-interval', interval=1000, n_intervals=0, disabled=True), # 1 second interval
         html.Div([
             html.H1('Collision Detection Algorithm Visualization'),
             html.P('Interactive demonstration with node grid'),
@@ -50,22 +54,32 @@ def get_layout():
 
 
 @callback(
-    [Output('log-table', 'data'), Output('graph', 'figure')],
+    [Output('log-table', 'data'), Output('graph', 'figure', allow_duplicate=True), Output('simulation-steps', 'data')],
     Input('start-algo-btn', 'n_clicks'),
     prevent_initial_call=True
 )
 
 def update_log_and_graph(n_clicks):
     g, pos, operations = create_network()
-    res = a.do(g, operations)
+    res = a.do(g, operations)  # `res` contains the collision simulation results
+    print(f"res: {res}")
     edge_trace, node_trace = generate_trace(g, operations)
-    print(res)
-    data = [{
-        'node1': f"N({op[0].x}, {op[0].y})",
-        'node2': f"N({op[1].x}, {op[1].y})",
-        'operations': '; '.join([', '.join([f"{action}" for action in sublist]) for sublist in op[2]])
-    } for op in res]
+    
+    # Generate intermediate states
+    _, _, [operations_list] = res[0]
+    simulation_steps = []
+    for step in operations_list:
+        # Modify the graph based on the current step (contraction or expansion)
+        g_step = apply_operation_on_graph(g, step)
+        # Apply operations to `g_step` for the current `step`
+        # e.g., handle contraction by removing a node, etc.
+        # Generate traces for each step and store them
+        edge_trace_step, node_trace_step = generate_trace(g_step, {})
+        simulation_steps.append({'edge_trace': edge_trace_step, 'node_trace': node_trace_step})
 
+    print(simulation_steps)
+    
+    # Prepare initial figure
     fig = go.Figure(data=[node_trace] + edge_trace, layout=dict(
         showlegend=False,
         hovermode='closest',
@@ -75,7 +89,13 @@ def update_log_and_graph(n_clicks):
         xaxis_scaleanchor="y", yaxis_scaleratio=1
     ))
 
-    return data, fig
+    data = [{
+        'node1': f"N({op[0].x}, {op[0].y})",
+        'node2': f"N({op[1].x}, {op[1].y})",
+        'operations': '; '.join([', '.join([f"{action}" for action in sublist]) for sublist in op[2]])
+    } for op in res]
+
+    return data, fig, simulation_steps
 
 @callback(
     Output('algo-started', 'data'),
@@ -101,4 +121,36 @@ def display_sim_button(data):
 )
 def dummy_action(n_clicks):
     return ""
+
+@callback(
+    [Output('graph', 'figure'), Output('current-step', 'data')],
+    [Input('simulation-interval', 'n_intervals')],
+    [State('simulation-steps', 'data'), State('current-step', 'data')],
+    prevent_initial_call=True
+)
+def run_simulation_step(n_intervals, simulation_steps, current_step):
+    if current_step < len(simulation_steps):
+        # Load the current step's traces
+        step_data = simulation_steps[current_step]
+        fig = go.Figure(data=[step_data['node_trace']] + step_data['edge_trace'], layout=dict(
+            showlegend=False,
+            hovermode='closest',
+            margin=dict(b=0, l=0, r=0, t=0),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            xaxis_scaleanchor="y", yaxis_scaleratio=1
+        ))
+        # Move to the next step
+        return fig, current_step + 1
+    else:
+        # Stop the interval if we reach the end of steps
+        return dash.no_update, current_step
+    
+@callback(
+    Output('simulation-interval', 'disabled'),
+    Input('start-sim-btn', 'n_clicks'),
+    prevent_initial_call=True
+)
+def start_simulation(n_clicks):
+    return False  # Enables the interval timer
 
