@@ -22,11 +22,11 @@ def read_from_file(filename: str) -> list[str] | None:
 
     return None
 
-def parse_graph(filename: str) -> tuple[Graph,Operations] | None:
+def parse_graph(filename: str) -> tuple[Graph,Operations]:
     lines = read_from_file(filename)
 
     if lines is None:
-        return None
+        raise Exception("Couldn't read file")
 
     nodes_str = lines[0]
     edges_str = lines[1]

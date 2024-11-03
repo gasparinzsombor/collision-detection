@@ -8,7 +8,12 @@ import plotly.graph_objects as go
 import algorithm.utilities.utilities
 from algorithm.utilities.utilities import parse_graph
 from algorithm.Node import Node
-from algorithm.algorithms import Edge, Operations, Operation
+from algorithm.algorithms import Edge, Operations, Operation, Coupling
+import matplotlib
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+
 
 def create_network() -> tuple[Graph, Any, Operations]:
     G, operations = parse_graph("examples/example-graph-1.txt")
@@ -71,15 +76,22 @@ def transfer_neighbors(graph: nx.Graph, keep_node: Node, remove_node: Node):
             graph.add_edge(keep_node, neighbor)
     
 def identify_side_nodes(graph: nx.Graph, keep_node: Node, remove_node: Node) -> list[Node]:
-    """Identifies nodes on the side of the remove_node based on distance."""
+    """Identifies nodes on the side of the remove_node based on shortest path distance."""
     nodes_to_move = []
     for node in graph.nodes:
-        # Calculate "distance" to keep_node and remove_node
-        dist_to_remove = abs(node.x - remove_node.x) + abs(node.y - remove_node.y)
-        dist_to_keep = abs(node.x - keep_node.x) + abs(node.y - keep_node.y)
-        
-        if dist_to_remove < dist_to_keep and node != remove_node:
-            nodes_to_move.append(node)
+        if node != remove_node:
+            # Calculate shortest path distance to keep_node and remove_node
+            try:
+                dist_to_remove = nx.shortest_path_length(graph, source=node, target=remove_node)
+                dist_to_keep = nx.shortest_path_length(graph, source=node, target=keep_node)
+                print(f"{node}: dist_to_remove: {dist_to_remove}, dist_to_keep: {dist_to_keep}")
+                
+                # Check if node is closer to remove_node than to keep_node
+                if dist_to_remove <= dist_to_keep:
+                    nodes_to_move.append(node)
+            except nx.NetworkXNoPath:
+                # If there's no path between nodes, ignore this node
+                continue
     
     return nodes_to_move
 
@@ -88,6 +100,8 @@ def move_nodes(g: Graph, nodes: list, move_x: int, move_y: int):
     print(f"nodes: {nodes}, move_x: {move_x}, move_y: {move_y}")
     for node in nodes:
         move_node(g, node, move_x, move_y)
+    
+    print(f"Graph nodes: {g.nodes}")
 
 def move_node(g: Graph, node: Node, move_x: int, move_y: int):
     new_node = Node(node.x + move_x, node.y + move_y)
@@ -101,6 +115,12 @@ def move_node(g: Graph, node: Node, move_x: int, move_y: int):
         g.add_edge(new_node, neighbor)
     print(f"Neighbors of {new_node}: {list(g.neighbors(new_node))}")
 
+
+def apply_coupling_on_graph(graph: nx.Graph, coupling: Coupling) -> nx.Graph:
+    for operation in coupling:
+        graph = apply_operation_on_graph(graph, operation)
+
+    return graph
 
 def apply_operation_on_graph(graph: nx.Graph, operation: Operation) -> nx.Graph:
     """Applies the given operation (e.g., contraction) on the graph copy."""
@@ -131,6 +151,9 @@ def apply_operation_on_graph(graph: nx.Graph, operation: Operation) -> nx.Graph:
             
             # Move identified nodes
             move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+    
+    nx.draw(graph_copy, with_labels=True)
+    plt.savefig("graph.png")  # Save as an image
     
     return graph_copy
 

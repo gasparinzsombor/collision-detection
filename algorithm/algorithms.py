@@ -12,8 +12,9 @@ Operations = dict[
             tuple[OpType, list[Edge]]
         ]
 Operation = tuple[Edge, OpType]
+Coupling = list[Operation]
 
-def do(g: Graph, operations: Operations) -> list[tuple[Node, Node, list[list[Operation]]]]:
+def do(g: Graph, operations: Operations) -> list[tuple[Node, Node, list[Coupling]]]:
     result: list[tuple[Node, Node, list[list[tuple[Edge, str]]]]] = []
 
     for node in g.nodes:

@@ -1,6 +1,6 @@
 from dash import html, dcc, callback, dash_table, Output, Input, State
 import dash
-from data.network_model import apply_operation_on_graph, create_network, generate_trace
+from data.network_model import apply_coupling_on_graph, create_network, generate_trace
 from plotly import graph_objects as go
 import algorithm.algorithms as a
 
@@ -66,18 +66,17 @@ def update_log_and_graph(n_clicks):
     edge_trace, node_trace = generate_trace(g, operations)
     
     # Generate intermediate states
-    _, _, [operations_list] = res[0]
+    _, _, couplings = res[0]
     simulation_steps = []
-    for step in operations_list:
+    g_step = g
+    for coupling in couplings:
         # Modify the graph based on the current step (contraction or expansion)
-        g_step = apply_operation_on_graph(g, step)
+        g_step = apply_coupling_on_graph(g_step, coupling)
         # Apply operations to `g_step` for the current `step`
         # e.g., handle contraction by removing a node, etc.
         # Generate traces for each step and store them
         edge_trace_step, node_trace_step = generate_trace(g_step, {})
         simulation_steps.append({'edge_trace': edge_trace_step, 'node_trace': node_trace_step})
-
-    print(simulation_steps)
     
     # Prepare initial figure
     fig = go.Figure(data=[node_trace] + edge_trace, layout=dict(
