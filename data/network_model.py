@@ -151,6 +151,29 @@ def apply_operation_on_graph(graph: nx.Graph, operation: Operation) -> nx.Graph:
             
             # Move identified nodes
             move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+
+    elif op_type == 'expansion':
+        # Ensure both nodes are in the graph
+        if node1 in graph_copy and node2 in graph_copy:
+            # Calculate the position for the new node (midpoint between node1 and node2)
+            new_x = (node1.x + node2.x) // 2
+            new_y = (node1.y + node2.y) // 2
+            new_node = Node(new_x, new_y)
+            
+            # Add the new node and connect it to node1 and node2
+            graph_copy.add_node(new_node)
+            graph_copy.add_edge(new_node, node1)
+            graph_copy.add_edge(new_node, node2)
+            
+            # Identify nodes on the side of node1 (for example) to be moved by one
+            nodes_to_move = identify_side_nodes(graph_copy, node1, new_node)
+            
+            # Determine movement direction (example: move nodes one unit in the x direction)
+            move_x = 1 if node1.x < node2.x else -1
+            move_y = 1 if node1.y < node2.y else -1
+            
+            # Move identified nodes
+            move_nodes(graph_copy, nodes_to_move, move_x, move_y)
     
     nx.draw(graph_copy, with_labels=True)
     plt.savefig("graph.png")  # Save as an image
