@@ -41,7 +41,7 @@ def parse_graph(filename: str) -> tuple[Graph,Operations]:
         start = edge[0]
         end = edge[1]
 
-        if (start, end) in operations:
+        if (start, end) in operations or (end,start) in operations:
             g.add_edge(start, end, operation=operations[(start, end)][0], parallel_edges=operations[(start, end)][1])
         else:
             g.add_edge(start, end)
