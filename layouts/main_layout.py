@@ -76,10 +76,11 @@ def update_log_and_graph(n_clicks):
             coupling = couplings[i]
             # Modify the graph based on the current step (contraction or expansion)
             g_step, couplings, collision_node = apply_coupling_on_graph(g_step, coupling, couplings, collision_node)
+            collision_node2 = collision_node if i + 1 == len(couplings) else None
             # Apply operations to `g_step` for the current `step`
             # e.g., handle contraction by removing a node, etc.
             # Generate traces for each step and store them
-            edge_trace_step, node_trace_step = generate_trace(g_step, {}, collision_node)
+            edge_trace_step, node_trace_step = generate_trace(g_step, {}, collision_node2)
             simulation_steps.append({'edge_trace': edge_trace_step, 'node_trace': node_trace_step})
     
     # Prepare initial figure
