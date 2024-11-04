@@ -21,7 +21,7 @@ def create_network() -> tuple[Graph, Any, Operations]:
     return G, list(map(lambda node: (node.x, node.y), G.nodes)), operations
 
 
-def generate_trace(G: Graph, operations: Operations, collision_node: Node | None = None) -> tuple[list[go.Scatter], go.Scatter]:
+def generate_trace(G: Graph, operations: dict, collision_node: Node | None = None) -> tuple[list[go.Scatter], go.Scatter]:
     traces = []
     for edge in G.edges:
         x0, y0 = edge[0].as_tuple()
@@ -30,7 +30,7 @@ def generate_trace(G: Graph, operations: Operations, collision_node: Node | None
         width = 2
         operation = operations.get(edge) or operations.get((edge[1], edge[0]))
         if operation:
-            operation_type = operation [0]
+            operation_type = operation[0]
             if operation_type == 'expansion':
                 color = 'red'
                 width = 4
@@ -47,8 +47,24 @@ def generate_trace(G: Graph, operations: Operations, collision_node: Node | None
         )
         traces.append(edge_trace)
 
-    node_x = [node.x for node in G.nodes]
-    node_y = [node.y for node in G.nodes]
+    # Generate node positions with color change for collision node
+    node_x = []
+    node_y = []
+    node_colors = []
+    node_texts = []
+
+    for node in G.nodes:
+        node_x.append(node.x)
+        node_y.append(node.y)
+        
+        # Set color to red if the node matches the collision node's position
+        if collision_node and node.x == collision_node.x and node.y == collision_node.y:
+            node_colors.append('#FFA500')
+        else:
+            node_colors.append('lightyellow')
+        
+        node_texts.append(str(node))
+
     node_trace = go.Scatter(
         x=node_x,
         y=node_y,
@@ -56,11 +72,11 @@ def generate_trace(G: Graph, operations: Operations, collision_node: Node | None
         hoverinfo='text',
         marker=dict(
             showscale=False,
-            color='lightyellow',
+            color=node_colors,
             size=40,
             line=dict(width=2)
         ),
-        text=[str(node) for node in G.nodes]
+        text=node_texts
     )
 
     return traces, node_trace

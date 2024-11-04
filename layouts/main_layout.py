@@ -78,7 +78,7 @@ def update_log_and_graph(n_clicks):
         # Apply operations to `g_step` for the current `step`
         # e.g., handle contraction by removing a node, etc.
         # Generate traces for each step and store them
-        edge_trace_step, node_trace_step = generate_trace(g_step, {})
+        edge_trace_step, node_trace_step = generate_trace(g_step, {}, collision_node)
         simulation_steps.append({'edge_trace': edge_trace_step, 'node_trace': node_trace_step})
     
     # Prepare initial figure
