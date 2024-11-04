@@ -2,7 +2,7 @@ import networkx
 from networkx import Graph
 import ast
 from algorithm.Node import Node
-from algorithms import Edge, Operations
+from algorithm.algorithms import Edge, Operations
 
 def read_from_file(filename: str) -> list[str] | None:
     try:
