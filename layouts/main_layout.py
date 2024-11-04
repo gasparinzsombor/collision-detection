@@ -65,21 +65,22 @@ def update_log_and_graph(n_clicks):
     print(f"res: {res}")
     edge_trace, node_trace = generate_trace(g, operations)
     
-    # Generate intermediate states
-    collision_node, _, couplings = res[0]
     simulation_steps = []
-    g_step = g
-    print(f"Initial couplings: {couplings}")
-    # for coupling in couplings:
-    for i in range(len(couplings)):
-        coupling = couplings[i]
-        # Modify the graph based on the current step (contraction or expansion)
-        g_step, couplings, collision_node = apply_coupling_on_graph(g_step, coupling, couplings, collision_node)
-        # Apply operations to `g_step` for the current `step`
-        # e.g., handle contraction by removing a node, etc.
-        # Generate traces for each step and store them
-        edge_trace_step, node_trace_step = generate_trace(g_step, {}, collision_node)
-        simulation_steps.append({'edge_trace': edge_trace_step, 'node_trace': node_trace_step})
+    if len(res) > 0:
+        # Generate intermediate states
+        collision_node, _, couplings = res[0]
+        g_step = g
+        print(f"Initial couplings: {couplings}")
+        # for coupling in couplings:
+        for i in range(len(couplings)):
+            coupling = couplings[i]
+            # Modify the graph based on the current step (contraction or expansion)
+            g_step, couplings, collision_node = apply_coupling_on_graph(g_step, coupling, couplings, collision_node)
+            # Apply operations to `g_step` for the current `step`
+            # e.g., handle contraction by removing a node, etc.
+            # Generate traces for each step and store them
+            edge_trace_step, node_trace_step = generate_trace(g_step, {}, collision_node)
+            simulation_steps.append({'edge_trace': edge_trace_step, 'node_trace': node_trace_step})
     
     # Prepare initial figure
     fig = go.Figure(data=[node_trace] + edge_trace, layout=dict(
