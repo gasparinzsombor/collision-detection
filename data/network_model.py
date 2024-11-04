@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 
 def create_network() -> tuple[Graph, Any, Operations]:
-    G, operations = parse_graph("examples/example-graph-2.txt")
+    G, operations = parse_graph("examples/example-graph-3.txt")
 
     return G, list(map(lambda node: (node.x, node.y), G.nodes)), operations
 
@@ -173,18 +173,12 @@ def apply_operation_on_graph(graph: nx.Graph, operation: Operation, coupling: Co
             # # Move identified nodes to clear space for the new node
             graph_copy = move_nodes(graph_copy, nodes_to_move, move_x, move_y)
         
-            
-            # # Ensure the new node position is unique after the move
-            # while new_node in graph_copy.nodes:
-            #     # Adjust the new node position slightly along the expansion axis
-            #     new_x += move_x
-            #     new_y += move_y
-            #     new_node = Node(new_x, new_y)
-            
-            # # Add the new node and connect it to node1 and node2
-            # graph_copy.add_node(new_node)
-            # graph_copy.add_edge(new_node, node1)
-            # graph_copy.add_edge(new_node, node2)
+            new_node = node2
+            moved_node = Node(node2.x + move_x, node2.y + move_y)
+            graph_copy.remove_edge(node1, moved_node)
+            graph_copy.add_node(new_node)
+            graph_copy.add_edge(node1, new_node)
+            graph_copy.add_edge(new_node, moved_node)
 
     coupling = transform_coupling(coupling, nodes_to_move, move_x, move_y)
     couplings = [transform_coupling(coup, nodes_to_move, move_x, move_y) for coup in couplings]
