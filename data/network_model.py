@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 
 def create_network() -> tuple[Graph, Any, Operations]:
-    G, operations = parse_graph("examples/example-graph-1.txt")
+    G, operations = parse_graph("examples/example-graph-2.txt")
 
     return G, list(map(lambda node: (node.x, node.y), G.nodes)), operations
 
@@ -84,7 +84,6 @@ def identify_side_nodes(graph: nx.Graph, keep_node: Node, remove_node: Node) -> 
             try:
                 dist_to_remove = nx.shortest_path_length(graph, source=node, target=remove_node)
                 dist_to_keep = nx.shortest_path_length(graph, source=node, target=keep_node)
-                print(f"{node}: dist_to_remove: {dist_to_remove}, dist_to_keep: {dist_to_keep}")
                 
                 # Check if node is closer to remove_node than to keep_node
                 if dist_to_remove <= dist_to_keep:
@@ -95,34 +94,42 @@ def identify_side_nodes(graph: nx.Graph, keep_node: Node, remove_node: Node) -> 
     
     return nodes_to_move
 
-def move_nodes(g: Graph, nodes: list, move_x: int, move_y: int):
-    """Moves each node in the nodes list by (move_x, move_y)."""
-    print(f"nodes: {nodes}, move_x: {move_x}, move_y: {move_y}")
-    for node in nodes:
-        move_node(g, node, move_x, move_y)
-    
-    print(f"Graph nodes: {g.nodes}")
-
-def move_node(g: Graph, node: Node, move_x: int, move_y: int):
-    new_node = Node(node.x + move_x, node.y + move_y)
-    g.add_node(new_node)
-
-    neighbors = list(g.neighbors(node))
-    g.remove_node(node)
-
-    print(f"neighbors for node {node}: {list(neighbors)}")
-    for neighbor in neighbors:
-        g.add_edge(new_node, neighbor)
-    print(f"Neighbors of {new_node}: {list(g.neighbors(new_node))}")
+def move_nodes(g: Graph, nodes_to_move: list, move_x: int, move_y: int) -> Graph:
+    print(f"Nodes to move: {nodes_to_move}")
+    new_graph = Graph()
+    for node in nodes_to_move:
+        new_node = Node(node.x + move_x, node.y + move_y)
+        new_graph.add_node(new_node)
 
 
-def apply_coupling_on_graph(graph: nx.Graph, coupling: Coupling) -> nx.Graph:
-    for operation in coupling:
-        graph = apply_operation_on_graph(graph, operation)
+    remaining_nodes = set(g.nodes).difference(set(nodes_to_move))
+    for node in remaining_nodes:
+        if node not in new_graph:
+            new_graph.add_node(node)
 
-    return graph
+    for edge in g.edges:
+        node1: Node = edge[0]
+        node2: Node = edge[1]
 
-def apply_operation_on_graph(graph: nx.Graph, operation: Operation) -> nx.Graph:
+        if node1 in nodes_to_move:
+            node1 = Node(node1.x + move_x, node1.y + move_y)
+
+        if node2 in nodes_to_move:
+            node2 = Node(node2.x + move_x, node2.y + move_y)
+        new_graph.add_edge(node1, node2)
+
+    return new_graph
+
+def apply_coupling_on_graph(graph: nx.Graph, coupling: Coupling, couplings: list[Coupling]) -> tuple[nx.Graph, list[Coupling]]:
+    # for operation in coupling:
+    print(f"Original couling: {coupling}")
+    for i in range(len(coupling)):
+        graph, coupling, couplings = apply_operation_on_graph(graph, coupling[i], coupling, couplings)
+        print(f"Modified coupling: {coupling}")
+
+    return (graph, couplings)
+
+def apply_operation_on_graph(graph: nx.Graph, operation: Operation, coupling: Coupling, couplings: list[Coupling]) -> tuple[nx.Graph, Coupling, list[Coupling]]:
     """Applies the given operation (e.g., contraction) on the graph copy."""
     # Unpack the operation details
     (node1, node2), op_type = operation
@@ -150,35 +157,49 @@ def apply_operation_on_graph(graph: nx.Graph, operation: Operation) -> nx.Graph:
             move_y = keep_node.y - remove_node.y
             
             # Move identified nodes
-            move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+            graph_copy = move_nodes(graph_copy, nodes_to_move, move_x, move_y)
 
     elif op_type == 'expansion':
         # Ensure both nodes are in the graph
         if node1 in graph_copy and node2 in graph_copy:
-            # Calculate the position for the new node (midpoint between node1 and node2)
-            new_x = (node1.x + node2.x) // 2
-            new_y = (node1.y + node2.y) // 2
-            new_node = Node(new_x, new_y)
+            # Identify nodes to move on one side of node1 and node2
+            nodes_to_move = identify_side_nodes(graph_copy, node1, node2)
+            nodes_to_move.append(node2)
+            print(f"Nodes to move: {nodes_to_move}")
             
-            # Add the new node and connect it to node1 and node2
-            graph_copy.add_node(new_node)
-            graph_copy.add_edge(new_node, node1)
-            graph_copy.add_edge(new_node, node2)
+            move_x = node2.x - node1.x
+            move_y = node2.y - node1.y
             
-            # Identify nodes on the side of node1 (for example) to be moved by one
-            nodes_to_move = identify_side_nodes(graph_copy, node1, new_node)
+            # # Move identified nodes to clear space for the new node
+            graph_copy = move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+        
             
-            # Determine movement direction (example: move nodes one unit in the x direction)
-            move_x = 1 if node1.x < node2.x else -1
-            move_y = 1 if node1.y < node2.y else -1
+            # # Ensure the new node position is unique after the move
+            # while new_node in graph_copy.nodes:
+            #     # Adjust the new node position slightly along the expansion axis
+            #     new_x += move_x
+            #     new_y += move_y
+            #     new_node = Node(new_x, new_y)
             
-            # Move identified nodes
-            move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+            # # Add the new node and connect it to node1 and node2
+            # graph_copy.add_node(new_node)
+            # graph_copy.add_edge(new_node, node1)
+            # graph_copy.add_edge(new_node, node2)
+
+    coupling = transform_coupling(coupling, nodes_to_move, move_x, move_y)
+    couplings = [transform_coupling(coup, nodes_to_move, move_x, move_y) for coup in couplings]
     
-    nx.draw(graph_copy, with_labels=True)
-    plt.savefig("graph.png")  # Save as an image
-    
-    return graph_copy
+    return (graph_copy, coupling, couplings)
+
+def transform_coupling(coupling: Coupling, moved_nodes: list[Node], move_x: int, move_y: int) -> Coupling:
+    print(f"movings: x: {move_x}, y: {move_y}")
+    return [transform_operation(operation, moved_nodes, move_x, move_y) for operation in coupling]
+
+def transform_operation(operation: Operation, moved_nodes: list[Node], move_x: int, move_y: int) -> Operation:
+    ((node1, node2), op_type) = operation
+    node1 = Node(node1.x + move_x, node1.y + move_y) if node1 in moved_nodes else node1
+    node2 = Node(node2.x + move_x, node2.y + move_y) if node2 in moved_nodes else node2
+    return ((node1, node2), op_type)
 
 def parse_simulation_data(d):
     pass
