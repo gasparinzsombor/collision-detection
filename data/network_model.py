@@ -16,12 +16,12 @@ import matplotlib.pyplot as plt
 
 
 def create_network() -> tuple[Graph, Any, Operations]:
-    G, operations = parse_graph("examples/example-graph-3.txt")
+    G, operations = parse_graph("examples/example-graph-1.txt")
 
     return G, list(map(lambda node: (node.x, node.y), G.nodes)), operations
 
 
-def generate_trace(G: Graph, operations: Operations) -> tuple[list[go.Scatter], go.Scatter]:
+def generate_trace(G: Graph, operations: Operations, collision_node: Node | None = None) -> tuple[list[go.Scatter], go.Scatter]:
     traces = []
     for edge in G.edges:
         x0, y0 = edge[0].as_tuple()
@@ -120,16 +120,16 @@ def move_nodes(g: Graph, nodes_to_move: list, move_x: int, move_y: int) -> Graph
 
     return new_graph
 
-def apply_coupling_on_graph(graph: nx.Graph, coupling: Coupling, couplings: list[Coupling]) -> tuple[nx.Graph, list[Coupling]]:
+def apply_coupling_on_graph(graph: nx.Graph, coupling: Coupling, couplings: list[Coupling], collisison_node: Node) -> tuple[nx.Graph, list[Coupling], Node]:
     # for operation in coupling:
     print(f"Original couling: {coupling}")
     for i in range(len(coupling)):
-        graph, coupling, couplings = apply_operation_on_graph(graph, coupling[i], coupling, couplings)
+        graph, coupling, couplings, collisison_node = apply_operation_on_graph(graph, coupling[i], coupling, couplings, collisison_node)
         print(f"Modified coupling: {coupling}")
 
-    return (graph, couplings)
+    return (graph, couplings, collisison_node)
 
-def apply_operation_on_graph(graph: nx.Graph, operation: Operation, coupling: Coupling, couplings: list[Coupling]) -> tuple[nx.Graph, Coupling, list[Coupling]]:
+def apply_operation_on_graph(graph: nx.Graph, operation: Operation, coupling: Coupling, couplings: list[Coupling], collision_node: Node) -> tuple[nx.Graph, Coupling, list[Coupling], Node]:
     """Applies the given operation (e.g., contraction) on the graph copy."""
     # Unpack the operation details
     (node1, node2), op_type = operation
@@ -182,8 +182,11 @@ def apply_operation_on_graph(graph: nx.Graph, operation: Operation, coupling: Co
 
     coupling = transform_coupling(coupling, nodes_to_move, move_x, move_y)
     couplings = [transform_coupling(coup, nodes_to_move, move_x, move_y) for coup in couplings]
+
+    if collision_node in nodes_to_move:
+        collision_node = Node(collision_node.x + move_x, collision_node.y + move_y)
     
-    return (graph_copy, coupling, couplings)
+    return (graph_copy, coupling, couplings, collision_node)
 
 def transform_coupling(coupling: Coupling, moved_nodes: list[Node], move_x: int, move_y: int) -> Coupling:
     print(f"movings: x: {move_x}, y: {move_y}")
