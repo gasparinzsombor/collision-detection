@@ -21,7 +21,7 @@ def get_layout():
         dcc.Store(id='algo-started', data={'started': False}),
         dcc.Store(id='simulation-steps', data=[]),
         dcc.Store(id='current-step', data=0),
-        dcc.Interval(id='simulation-interval', interval=1000, n_intervals=0, disabled=True), # 1 second interval
+        dcc.Interval(id='simulation-interval', interval=5000, n_intervals=0, disabled=True), # 1 second interval
         html.Div([
             html.H1('Collision Detection Algorithm Visualization'),
             html.P('Interactive demonstration with node grid'),
