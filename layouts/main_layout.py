@@ -69,9 +69,13 @@ def update_log_and_graph(n_clicks):
     _, _, couplings = res[0]
     simulation_steps = []
     g_step = g
-    for coupling in couplings:
+    print(f"Initial couplings: {couplings}")
+    # for coupling in couplings:
+    for i in range(len(couplings)):
+        coupling = couplings[i]
         # Modify the graph based on the current step (contraction or expansion)
-        g_step = apply_coupling_on_graph(g_step, coupling)
+        g_step, couplings = apply_coupling_on_graph(g_step, coupling, couplings)
+        print(f"Modified couplings after running {coupling}: {couplings}")
         # Apply operations to `g_step` for the current `step`
         # e.g., handle contraction by removing a node, etc.
         # Generate traces for each step and store them
