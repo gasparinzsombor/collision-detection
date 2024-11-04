@@ -2,12 +2,7 @@ import networkx
 from networkx import Graph
 import ast
 from algorithm.Node import Node
-
-Edge = tuple[Node, Node]
-Operations = dict[
-            Edge,
-            tuple[str, list[Edge]]
-        ]
+from algorithms import Edge, Operations
 
 def read_from_file(filename: str) -> list[str] | None:
     try:
