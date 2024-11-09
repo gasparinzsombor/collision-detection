@@ -15,8 +15,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
-def create_network() -> tuple[Graph, list[tuple[int, int]], Operations]:
-    G, operations = parse_graph("examples/example-graph-expansion.txt")
+def create_network(filename) -> tuple[Graph, list[tuple[int, int]], Operations]:
+    G, operations = parse_graph(filename)
 
     return G, list(map(lambda node: (node.x, node.y), G.nodes)), operations
 
