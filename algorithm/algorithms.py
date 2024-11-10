@@ -1,3 +1,4 @@
+from typing import Literal
 from networkx.classes import Graph
 from algorithm.Vec import Vec
 from algorithm.Node import Node
@@ -5,12 +6,15 @@ from algorithm.Vector import Vector
 import copy
 
 Edge = tuple[Node, Node]
+OpType = Literal["contraction", "expansion"]
 Operations = dict[
             Edge,
-            tuple[str, list[Edge]]
+            tuple[OpType, list[Edge]]
         ]
+Operation = tuple[Edge, OpType]
+Coupling = list[Operation]
 
-def do(g: Graph, operations: Operations) -> list[tuple[Node, Node, list[list[tuple[Edge, str]]]]]:
+def do(g: Graph, operations: Operations) -> list[tuple[Node, Node, list[Coupling]]]:
     result: list[tuple[Node, Node, list[list[tuple[Edge, str]]]]] = []
 
     for node in g.nodes:

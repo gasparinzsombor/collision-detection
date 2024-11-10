@@ -30,17 +30,19 @@
 .content-row {
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
     margin-top: 10px;
     width: 100%;
 }
 
 /* Visualization Area */
 .visualization-area {
-    width: 60%;
+    flex: 1 1 60%; /* Allow shrinking and growing */
     background-color: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    min-width: 600px; /* Ensure minimum width for visibility */
 }
 
 /* Vector display */
@@ -52,16 +54,16 @@
 
 /* Control Panel */
 .control-panel {
-    width: 25%; /* Adjusted for more space */
+    flex: 1 1 35%; /* Adjusted for more space, allow shrinking and growing */
     padding: 20px;
     background-color: #e3e4e6;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column; /* Stack all elements vertically */
+    margin-left: 10px; /* Add some space between panels */
 }
 
-/* Header inside control panel */
 .control-panel h2 {
     font-size: 20px;
     margin-bottom: 15px;
@@ -72,41 +74,6 @@
 .input-field, .dropdown, .action-button, .slider {
     margin-bottom: 15px;
     width: 100%;
-    max-width: 100%; /* Prevent sliders and inputs from exceeding width */
-    box-sizing: border-box; /* Ensure padding doesn't overflow */
-}
-
-/* Fix the input field (number input) */
-.input-field {
-    padding: 12px;  /* Add padding for better alignment */
-    font-size: 16px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    width: 100%; /* Ensure the input takes full width */
-    box-sizing: border-box;
-}
-
-/* Ensure dropdown is larger and consistent */
-.dropdown {
-    padding: 12px; /* Increased padding for larger feel */
-    font-size: 16px;
-    border-radius: 4px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* Ensure slider takes full width and doesn't overflow */
-.slider {
-    padding: 8px 0;
-    width: 100%; /* Ensure full width */
-    max-width: 100%; /* No overflow */
-    box-sizing: border-box;
-}
-
-.slider-container {
-    width: 100%;  /* Additional container for sliders */
-    padding: 0;
-    margin-bottom: 20px;
 }
 
 /* Action buttons consistency */
@@ -118,7 +85,6 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
-    width: 100%;
 }
 
 .action-button:hover {
@@ -127,11 +93,12 @@
 
 /* Information Panel */
 .information-panel {
-    width: 25%; /* Adjusted for more space */
+    flex: 1 1 35%; /* Similar to control panel */
     padding: 20px;
     background-color: #e3e4e6;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-left: 10px; /* Consistent spacing */
 }
 
 .information-panel h2 {
@@ -148,4 +115,16 @@
     font-size: 14px;
     color: #333;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1024px) {
+    .content-row {
+        flex-direction: column;
+    }
+
+    .visualization-area, .control-panel, .information-panel {
+        flex: 1 1 100%; /* Take full width on smaller screens */
+        margin-left: 0;
+        margin-bottom: 20px;
+    }
 }

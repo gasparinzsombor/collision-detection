@@ -2,12 +2,7 @@ import networkx
 from networkx import Graph
 import ast
 from algorithm.Node import Node
-
-Edge = tuple[Node, Node]
-Operations = dict[
-            Edge,
-            tuple[str, list[Edge]]
-        ]
+from algorithm.algorithms import Edge, Operations
 
 def read_from_file(filename: str) -> list[str] | None:
     try:
@@ -22,11 +17,11 @@ def read_from_file(filename: str) -> list[str] | None:
 
     return None
 
-def parse_graph(filename: str) -> tuple[Graph,Operations] | None:
+def parse_graph(filename: str) -> tuple[Graph,Operations]:
     lines = read_from_file(filename)
 
     if lines is None:
-        return None
+        raise Exception("Couldn't read file")
 
     nodes_str = lines[0]
     edges_str = lines[1]
@@ -46,7 +41,7 @@ def parse_graph(filename: str) -> tuple[Graph,Operations] | None:
         start = edge[0]
         end = edge[1]
 
-        if (start, end) in operations:
+        if (start, end) in operations or (end,start) in operations:
             g.add_edge(start, end, operation=operations[(start, end)][0], parallel_edges=operations[(start, end)][1])
         else:
             g.add_edge(start, end)

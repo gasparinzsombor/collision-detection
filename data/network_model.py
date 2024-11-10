@@ -1,102 +1,218 @@
+from typing import Any
+from webbrowser import Opera
+from matplotlib.pyplot import scatter
 import networkx as nx
+from networkx import Graph
+from networkx import neighbors
 import plotly.graph_objects as go
-
 import algorithm.utilities.utilities
 from algorithm.utilities.utilities import parse_graph
+from algorithm.Node import Node
+from algorithm.algorithms import Edge, Operations, Operation, Coupling
+import matplotlib
+matplotlib.use('Agg')
 
-# operations = {
-#     ((1, 6), (2, 6)): ("expansion", [((3, 8), (3, 7))]),
-#     ((3, 8), (3, 7)): ("expansion", [((1, 6), (2, 6))]),
-#     ((7, 7), (8, 7)): ("expansion", []),
-#     ((8, 6), (8, 5)): ("expansion", [((9, 6), (10, 6)), ((12, 5), (12, 4))]),
-#     ((9, 6), (10, 6)): ("contraction", [((8, 6), (8, 5)), ((12, 5), (12, 4))]),
-#     ((10, 8), (10, 7)): ("contraction", []),
-#     ((11, 8), (12, 8)): ("expansion", []),
-#     ((12, 5), (12, 4)): ("expansion", [((8, 6), (8, 5)), ((9, 6), (10, 6))]),
-#     ((12, 3), (12, 2)): ("contraction", []),
-#     ((10, 2), (11, 2)): ("expansion", [((6, 2), (7, 2)), ((5, 4), (5, 3))]),
-#     ((8, 2), (9, 2)): ("contraction", []),
-#     ((6, 2), (7, 2)): ("expansion", [((10, 2), (11, 2)), ((5, 4), (5, 3))]),
-#     ((5, 4), (5, 3)): ("expansion", [((10, 2), (11, 2)), ((6, 2), (7, 2))])
-# }
+import matplotlib.pyplot as plt
 
 
-def create_network():
-  #   G = nx.DiGraph()
-  #
-  #   positions = {
-  #       'a1': (1, 0), 'a2': (7, 0), 'a3': (8, 0), 'a4': (9, 0), 'a5': (10, 0),
-  #       'b1': (1, 1), 'v': (2, 1), 'b3': (3, 1), 'b4': (4, 1), 'b5': (5, 1), 'b6': (6, 1), 'b7': (8, 1),
-  #       'c1': (0, 2), 'c2': (1, 2), 'c3': (6, 2), 'c4': (7, 2), 'c5': (8, 2), 'c6': (9, 2), 'c7': (10, 2),
-  #       'd1': (6, 3), 'd2': (10, 3),
-  #       'w': (3, 4), 'e2': (6, 4), 'e3': (10, 4),
-  #       'f1': (3, 5), 'f2': (10, 5),
-  #       'g1': (1, 6), 'g2': (2, 6), 'g3': (3, 6), 'g4': (4, 6), 'g5': (5, 6), 'g6': (6, 6), 'g7': (7, 6), 'g8': (8, 6),
-  #       'g9': (9, 6), 'g10': (10, 6)
-  #   }
-  #
-  #
-  #   G.add_nodes_from(positions.keys())
-  #   G.add_edges_from([
-  #       ('a2', 'a3'), ('a3', 'a4'), ('a4', 'a5'),
-  #       ('b1', 'v'), ('v', 'b3'), ('b3', 'b4'), ('b4', 'b5'), ('b5', 'b6'),
-  #       ('c1', 'c2'), ('c3', 'c4'), ('c4', 'c5'), ('c5', 'c6'), ('c6', 'c7'),
-  #       ('g1', 'g2'), ('g2', 'g3'), ('g3', 'g4'), ('g4', 'g5'), ('g5', 'g6'), ('g6', 'g7'), ('g7', 'g8'), ('g8', 'g9'), ('g9', 'g10'),
-  #
-  #    ('a1', 'b1'),('a3', 'b7'), ('b1', 'c2'), ('b6', 'c3'), ('b7', 'c5'),
-  #   ('c3', 'd1'), ('d2', 'c7'), ('e2', 'd1'),
-  #                         ('f1', 'g3'), ('f2', 'g10'), ('w', 'f1'),
-  #                         ('d2', 'e3'), ('e3', 'f2'),
-  #
-  #   ]
-  # )
-
-    G, operations = parse_graph("examples/example-graph-1.txt")
+def create_network(filename) -> tuple[Graph, list[tuple[int, int]], Operations]:
+    G, operations = parse_graph(filename)
 
     return G, list(map(lambda node: (node.x, node.y), G.nodes)), operations
 
 
-def generate_trace(G, highlighted_nodes=None):
-    if highlighted_nodes is None:
-        highlighted_nodes = []
-
-    x, y = [], []
+def generate_trace(G: Graph, operations: dict, collision_node: Node | None = None) -> tuple[list[go.Scatter], go.Scatter]:
+    traces = []
     for edge in G.edges:
         x0, y0 = edge[0].as_tuple()
         x1, y1 = edge[1].as_tuple()
-        x.extend([x0, x1, None])
-        y.extend([y0, y1, None])
+        color = 'black'
+        width = 2
+        operation = operations.get(edge) or operations.get((edge[1], edge[0]))
+        if operation:
+            operation_type = operation[0]
+            if operation_type == 'expansion':
+                color = 'red'
+                width = 4
+            elif operation_type == 'contraction':
+                color = 'green'
+                width = 4
 
-    edge_trace = go.Scatter(
-        x=x,
-        y=y,
-        line=dict(width=2, color='#888'),
-        hoverinfo='none',
-        mode='lines')
+        edge_trace = go.Scatter(
+            x=[x0, x1, None],
+            y=[y0, y1, None],
+            line=dict(width=width, color=color),
+            mode='lines',
+            hoverinfo='none'
+        )
+        traces.append(edge_trace)
 
-    node_x = [node.x for node in G.nodes]
-    node_y = [node.y for node in G.nodes]
-    #node_colors = ['red' if node in highlighted_nodes else 'lightgreen' for node in G.nodes]
+    # Generate node positions with color change for collision node
+    node_x = []
+    node_y = []
+    node_colors = []
+    node_texts = []
+
+    for node in G.nodes:
+        node_x.append(node.x)
+        node_y.append(node.y)
+        
+        # Set color to red if the node matches the collision node's position
+        if collision_node and node.x == collision_node.x and node.y == collision_node.y:
+            node_colors.append('#FFA500')
+        else:
+            node_colors.append('lightyellow')
+        
+        node_texts.append(str(node))
 
     node_trace = go.Scatter(
         x=node_x,
         y=node_y,
-        mode='markers+text',
+        mode='markers',
         hoverinfo='text',
         marker=dict(
             showscale=False,
-            color="green",
+            color=node_colors,
             size=40,
-            line_width=2,
-            symbol='square'
+            line=dict(width=2)
         ),
-        text=[node for node in G])
+        text=node_texts
+    )
 
-    return edge_trace, node_trace
+    return traces, node_trace
+
+def copy_graph(graph: nx.Graph) -> nx.Graph:
+    """Creates a copy of the graph."""
+    return graph.copy()
+
+def transfer_neighbors(graph: nx.Graph, keep_node: Node, remove_node: Node):
+    """Transfers all neighbors of remove_node to keep_node, avoiding self-loops."""
+    for neighbor in list(graph.neighbors(remove_node)):
+        if neighbor != keep_node:  # Avoid self-loop
+            graph.add_edge(keep_node, neighbor)
+    
+def identify_side_nodes(graph: nx.Graph, keep_node: Node, remove_node: Node) -> list[Node]:
+    """Identifies nodes on the side of the remove_node based on shortest path distance."""
+    nodes_to_move = []
+    for node in graph.nodes:
+        if node != remove_node:
+            # Calculate shortest path distance to keep_node and remove_node
+            try:
+                dist_to_remove = nx.shortest_path_length(graph, source=node, target=remove_node)
+                dist_to_keep = nx.shortest_path_length(graph, source=node, target=keep_node)
+                
+                # Check if node is closer to remove_node than to keep_node
+                if dist_to_remove <= dist_to_keep:
+                    nodes_to_move.append(node)
+            except nx.NetworkXNoPath:
+                # If there's no path between nodes, ignore this node
+                continue
+    
+    return nodes_to_move
+
+def move_nodes(g: Graph, nodes_to_move: list, move_x: int, move_y: int) -> Graph:
+    print(f"Nodes to move: {nodes_to_move}")
+    new_graph = Graph()
+    for node in nodes_to_move:
+        new_node = Node(node.x + move_x, node.y + move_y)
+        new_graph.add_node(new_node)
 
 
-def simulate_step(parsed_data):
-    pass
+    remaining_nodes = set(g.nodes).difference(set(nodes_to_move))
+    for node in remaining_nodes:
+        if node not in new_graph:
+            new_graph.add_node(node)
+
+    for edge in g.edges:
+        node1: Node = edge[0]
+        node2: Node = edge[1]
+
+        if node1 in nodes_to_move:
+            node1 = Node(node1.x + move_x, node1.y + move_y)
+
+        if node2 in nodes_to_move:
+            node2 = Node(node2.x + move_x, node2.y + move_y)
+        new_graph.add_edge(node1, node2)
+
+    return new_graph
+
+def apply_coupling_on_graph(graph: nx.Graph, coupling: Coupling, couplings: list[Coupling], collisison_node: Node) -> tuple[nx.Graph, list[Coupling], Node]:
+    # for operation in coupling:
+    print(f"Original couling: {coupling}")
+    for i in range(len(coupling)):
+        graph, coupling, couplings, collisison_node = apply_operation_on_graph(graph, coupling[i], coupling, couplings, collisison_node)
+        print(f"Modified coupling: {coupling}")
+
+    return (graph, couplings, collisison_node)
+
+def apply_operation_on_graph(graph: nx.Graph, operation: Operation, coupling: Coupling, couplings: list[Coupling], collision_node: Node) -> tuple[nx.Graph, Coupling, list[Coupling], Node]:
+    """Applies the given operation (e.g., contraction) on the graph copy."""
+    # Unpack the operation details
+    (node1, node2), op_type = operation
+    
+    # Copy the graph
+    graph_copy = copy_graph(graph)
+    
+    if op_type == 'contraction':
+        # Ensure both nodes are in the graph
+        if node1 in graph_copy and node2 in graph_copy:
+            # Decide which node to keep and which to remove
+            keep_node, remove_node = node1, node2
+            
+            # Transfer neighbors from remove_node to keep_node
+            transfer_neighbors(graph_copy, keep_node, remove_node)
+            
+            # Identify the nodes on the side of the removed node
+            nodes_to_move = identify_side_nodes(graph_copy, keep_node, remove_node)
+
+            # Remove the contracted node
+            graph_copy.remove_node(remove_node)
+            
+            # Calculate movement vector
+            move_x = keep_node.x - remove_node.x
+            move_y = keep_node.y - remove_node.y
+            
+            # Move identified nodes
+            graph_copy = move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+
+    elif op_type == 'expansion':
+        # Ensure both nodes are in the graph
+        if node1 in graph_copy and node2 in graph_copy:
+            # Identify nodes to move on one side of node1 and node2
+            nodes_to_move = identify_side_nodes(graph_copy, node1, node2)
+            nodes_to_move.append(node2)
+            print(f"Nodes to move: {nodes_to_move}")
+            
+            move_x = node2.x - node1.x
+            move_y = node2.y - node1.y
+            
+            # # Move identified nodes to clear space for the new node
+            graph_copy = move_nodes(graph_copy, nodes_to_move, move_x, move_y)
+        
+            new_node = node2
+            moved_node = Node(node2.x + move_x, node2.y + move_y)
+            graph_copy.remove_edge(node1, moved_node)
+            graph_copy.add_node(new_node)
+            graph_copy.add_edge(node1, new_node)
+            graph_copy.add_edge(new_node, moved_node)
+
+    coupling = transform_coupling(coupling, nodes_to_move, move_x, move_y)
+    couplings = [transform_coupling(coup, nodes_to_move, move_x, move_y) for coup in couplings]
+
+    if collision_node in nodes_to_move:
+        collision_node = Node(collision_node.x + move_x, collision_node.y + move_y)
+    
+    return (graph_copy, coupling, couplings, collision_node)
+
+def transform_coupling(coupling: Coupling, moved_nodes: list[Node], move_x: int, move_y: int) -> Coupling:
+    print(f"movings: x: {move_x}, y: {move_y}")
+    return [transform_operation(operation, moved_nodes, move_x, move_y) for operation in coupling]
+
+def transform_operation(operation: Operation, moved_nodes: list[Node], move_x: int, move_y: int) -> Operation:
+    ((node1, node2), op_type) = operation
+    node1 = Node(node1.x + move_x, node1.y + move_y) if node1 in moved_nodes else node1
+    node2 = Node(node2.x + move_x, node2.y + move_y) if node2 in moved_nodes else node2
+    return ((node1, node2), op_type)
 
 def parse_simulation_data(d):
     pass

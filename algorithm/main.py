@@ -101,10 +101,9 @@ def main():
     #start = Node(8,7)
     #a.traverse_from_node(G, start, operations)
 
-    g, ops = parse_graph("../examples/example-graph-1.txt")
+    g, ops = parse_graph("../examples/example-graph-2.txt")
 
     result = a.do(g, ops)
 
-    print(result)
 if __name__ == "__main__":
     main()
