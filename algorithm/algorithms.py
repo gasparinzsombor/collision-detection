@@ -21,6 +21,8 @@ def do(g: Graph, operations: Operations) -> list[tuple[Node, Node, list[Coupling
         print("=== From node: " + str(node) + " ===")
         result += traverse_from_node(g, node, operations)
         print("===============================")
+        if len(result) > 0:
+            return result
 
     #print(result)
     return result

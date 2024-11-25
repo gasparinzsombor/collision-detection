@@ -2,6 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import algorithms as a
 import utilities
+import time
 
 from Node import Node
 from Vector import Vector
@@ -101,9 +102,30 @@ def main():
     #start = Node(8,7)
     #a.traverse_from_node(G, start, operations)
 
-    g, ops = parse_graph("../examples/example-graph-2.txt")
+    #g, ops = parse_graph("../examples/example-graph-2.txt")
 
-    result = a.do(g, ops)
+    folder = "../examples/data/generated_graphs/"
+    filename = "graph_type3_size"
+    sizes = ["5", "12", "20", "30", "40"]
+    runtimes = {}
+    for i in range(0, len(sizes)):
+        g, ops = parse_graph(folder + filename + sizes[i] + ".txt")
+        start_time = time.time()
+        result = a.do(g, ops)
+        elapsed_time = time.time() - start_time
+
+        runtimes[sizes[i]] = elapsed_time
+
+    times = [runtimes[size] for size in sizes]
+    plt.plot(sizes, times, label=f"Graph Type: only horizontal")
+
+    plt.xlabel("Number of Nodes")
+    plt.ylabel("Runtime (seconds)")
+    plt.title("Algorithm Runtime by Graph Type")
+    plt.legend()
+    plt.savefig("../plot/algorithm_runtime_mixed.png")
+    plt.close()
+
 
 if __name__ == "__main__":
     main()
